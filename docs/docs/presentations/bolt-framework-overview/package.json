@@ -1,0 +1,27 @@
+{
+  "name": "bolt-framework-overview-deck",
+  "private": true,
+  "type": "module",
+  "description": "Slidev deck: Bolt Framework overview (Avanade-branded)",
+  "scripts": {
+    "dev": "slidev slides.md --open",
+    "dev:preview": "slidev slides.md --port 3030",
+    "build": "slidev build slides.md",
+    "export": "slidev export slides.md --format pdf --per-slide --output bolt-framework-overview.pdf",
+    "export:pptx": "slidev export slides.md --format pptx --output bolt-framework-overview.pptx",
+    "export:png": "slidev export slides.md --format png --output slide-images",
+    "dev:client": "slidev slides-client.md --port 3031",
+    "export:client": "slidev export slides-client.md --format pdf --per-slide --output bolt-framework-client.pdf",
+    "export:client:pptx": "slidev export slides-client.md --format pptx --output bolt-framework-client.pptx && python scripts/strip-pptx-notes.py bolt-framework-client.pptx"
+  },
+  "dependencies": {
+    "@ava-innersource/slidev-theme-base": "git+https://github.com/ava-innersource/slidev-theme-avanade-base.git#v0.0.8"
+  },
+  "devDependencies": {
+    "@slidev/cli": "^52.16.0",
+    "playwright-chromium": "^1.56.0"
+  },
+  "engines": {
+    "node": ">=20.12.0"
+  }
+}

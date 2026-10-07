@@ -1,0 +1,7 @@
+{
+  "name": "bolt-work-management",
+  "description": "Sincronización de features, use cases, bolts, tareas y dependencias con sistemas de gestión (Azure DevOps, GitHub Projects). CI/CD orchestration.",
+  "version": "0.1.0",
+  "author": { "name": "Bolt Framework" },
+  "skills": ["./skills"]
+}

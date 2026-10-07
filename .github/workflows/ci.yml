@@ -1,0 +1,624 @@
+# Bolt Framework Continuous Integration Pipeline
+# This workflow validates code quality, runs tests, and ensures policy compliance
+
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, develop, 'feature/**', 'release/**']
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+  workflow_call: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # ============================================================================
+  # STAGE 0: Change Classification
+  # Full CI runs outside PRs. PRs use this to keep validation focused and fast.
+  # ============================================================================
+  detect-changes:
+    name: Detect Changed Areas
+    runs-on: ubuntu-latest
+    outputs:
+      contracts_changed: ${{ steps.classify.outputs.contracts_changed }}
+      integration_changed: ${{ steps.classify.outputs.integration_changed }}
+      framework_changed: ${{ steps.classify.outputs.framework_changed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Classify changed files
+        id: classify
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          set -o pipefail
+
+          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            base_sha="${PR_BASE_SHA}"
+            head_sha="${PR_HEAD_SHA}"
+          elif [[ -n "${BEFORE_SHA}" && "${BEFORE_SHA}" != "0000000000000000000000000000000000000000" ]]; then
+            base_sha="${BEFORE_SHA}"
+            head_sha="${CURRENT_SHA}"
+          else
+            base_sha="$(git rev-list --max-parents=0 HEAD | tail -n 1)"
+            head_sha="HEAD"
+          fi
+
+          git diff --name-only "${base_sha}...${head_sha}" > changed-files.txt
+
+          echo "Changed files:"
+          cat changed-files.txt
+
+          contracts_changed=false
+          integration_changed=false
+          framework_changed=false
+
+          if grep -Eq '(^contracts/|^specs/.*/contracts/|^\.github/workflows/contract-tests\.yml$|^package(-lock)?\.json$)' changed-files.txt; then
+            contracts_changed=true
+          fi
+
+          if grep -Eq '(^src/|^tests/|^specs/|^package(-lock)?\.json$)' changed-files.txt; then
+            integration_changed=true
+          fi
+
+          if grep -Eq '(^\.boltf/|^plugins/|^tests/|^Init\.ps1$|^init\.sh$|^Invoke-PythonScript\.ps1$|^AGENTS\.md$|^CLAUDE\.md$|^\.github/(agents|prompts|instructions)/|^package(-lock)?\.json$)' changed-files.txt; then
+            framework_changed=true
+          fi
+
+          echo "contracts_changed=${contracts_changed}" >> "$GITHUB_OUTPUT"
+          echo "integration_changed=${integration_changed}" >> "$GITHUB_OUTPUT"
+          echo "framework_changed=${framework_changed}" >> "$GITHUB_OUTPUT"
+
+  # ============================================================================
+  # STAGE 1: Code Quality & Static Analysis
+  # ============================================================================
+  lint-and-format:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint --if-present
+
+      - name: Check formatting (Prettier)
+        run: npm run format:check --if-present
+
+      - name: TypeScript type check
+        run: npm run typecheck --if-present
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Detect JS/TS sources for CodeQL
+        id: detect-js-ts
+        run: |
+          if find . -type f \( -name "*.js" -o -name "*.jsx" -o -name "*.ts" -o -name "*.tsx" \) \
+            -not -path "./node_modules/*" \
+            -not -path "./dist/*" \
+            -not -path "./coverage/*" \
+            -not -path "./.boltf/*" \
+            -not -path "./.claude/*" \
+            -not -path "./.github/*" \
+            -not -path "./docs/*" \
+            -not -path "./demo/*" \
+            -not -path "./examples/*" \
+            -not -path "./.git/*" | grep -q .; then
+            echo "has_sources=true" >> "$GITHUB_OUTPUT"
+            echo "JS/TS sources detected. CodeQL will run."
+          else
+            echo "has_sources=false" >> "$GITHUB_OUTPUT"
+            echo "No JS/TS sources detected. Skipping CodeQL JS/TS analysis."
+          fi
+
+      - name: Detect CodeQL availability
+        id: detect-codeql
+        env:
+          CODEQL_OVERRIDE: ${{ vars.ENABLE_CODE_SCANNING }}
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          REPOSITORY_PRIVATE: ${{ github.event.repository.private }}
+        run: |
+          repository_visibility="$(gh api "repos/${REPOSITORY}" --jq '.visibility // "unknown"' 2>/dev/null || echo "unknown")"
+          advanced_security_status="$(gh api "repos/${REPOSITORY}" --jq '.security_and_analysis.advanced_security.status // "unavailable"' 2>/dev/null || echo "unavailable")"
+
+          if [[ "${CODEQL_OVERRIDE}" == "true" ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "CodeQL was explicitly enabled through the ENABLE_CODE_SCANNING repository variable."
+          elif [[ "${CODEQL_OVERRIDE}" == "false" ]]; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping CodeQL because ENABLE_CODE_SCANNING is set to false."
+          elif [[ "${repository_visibility}" == "public" || "${advanced_security_status}" == "enabled" ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "CodeQL is available for this repository (visibility=${repository_visibility}, advanced_security=${advanced_security_status})."
+          elif [[ "${repository_visibility}" == "unknown" && "${REPOSITORY_PRIVATE}" == "false" ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "CodeQL availability could not be read from the repository API, but the event reports a non-private repository. CodeQL will run."
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping CodeQL because GitHub Advanced Security is not enabled for this repository (visibility=${repository_visibility}, advanced_security=${advanced_security_status})."
+          fi
+
+      - name: Run npm audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+        continue-on-error: true
+
+      - name: CodeQL Analysis
+        if: ${{ steps.detect-js-ts.outputs.has_sources == 'true' && steps.detect-codeql.outputs.available == 'true' }}
+        uses: github/codeql-action/init@v4
+        with:
+          languages: javascript, typescript
+
+      - name: Autobuild
+        if: ${{ steps.detect-js-ts.outputs.has_sources == 'true' && steps.detect-codeql.outputs.available == 'true' }}
+        uses: github/codeql-action/autobuild@v4
+
+      - name: Perform CodeQL Analysis
+        if: ${{ steps.detect-js-ts.outputs.has_sources == 'true' && steps.detect-codeql.outputs.available == 'true' }}
+        uses: github/codeql-action/analyze@v4
+
+      - name: CodeQL skipped notice
+        if: ${{ steps.detect-js-ts.outputs.has_sources != 'true' || steps.detect-codeql.outputs.available != 'true' }}
+        run: |
+          if [[ "${{ steps.detect-js-ts.outputs.has_sources }}" != "true" ]]; then
+            echo "Skipping CodeQL JS/TS analysis because no source files were found."
+          else
+            echo "Skipping CodeQL JS/TS analysis because CodeQL/GitHub Advanced Security is not available for this repository."
+          fi
+
+  # ============================================================================
+  # STAGE 2: Unit Tests
+  # ============================================================================
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: [lint-and-format]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests with coverage
+        run: |
+          if node -e "const scripts=require('./package.json').scripts||{}; process.exit(scripts['test:unit'] ? 0 : 1)"; then
+            npm run test:unit -- --coverage
+          elif node -e "const scripts=require('./package.json').scripts||{}; process.exit(scripts['test'] ? 0 : 1)"; then
+            npm run test -- --coverage
+          else
+            echo "No unit test script found (test:unit/test). Skipping unit tests."
+          fi
+
+      - name: Upload coverage report
+        if: ${{ hashFiles('coverage/lcov.info') != '' }}
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage/lcov.info
+          fail_ci_if_error: false
+
+      - name: Check coverage threshold
+        if: ${{ hashFiles('coverage/coverage-summary.json') != '' }}
+        run: |
+          COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
+          echo "Coverage: $COVERAGE%"
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "::warning::Coverage is below 80% threshold"
+          fi
+
+  # ============================================================================
+  # STAGE 3: Contract Tests (BDD/Gherkin)
+  # ============================================================================
+  contract-tests:
+    name: Contract Tests
+    runs-on: ubuntu-latest
+    needs: [detect-changes, lint-and-format]
+    if: ${{ github.event_name != 'pull_request' || needs.detect-changes.outputs.contracts_changed == 'true' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Cucumber/Gherkin tests
+        run: npm run test:contracts --if-present
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: contract-test-results
+          path: |
+            reports/cucumber-*.json
+            reports/cucumber-*.html
+
+  # ============================================================================
+  # STAGE 4: Integration Tests
+  # ============================================================================
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [detect-changes, unit-tests, contract-tests]
+    if: >-
+      ${{
+        always() &&
+        needs.unit-tests.result == 'success' &&
+        (needs.contract-tests.result == 'success' || needs.contract-tests.result == 'skipped') &&
+        (github.event_name != 'pull_request' || needs.detect-changes.outputs.integration_changed == 'true')
+      }}
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run integration tests
+        run: npm run test:integration --if-present
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
+          REDIS_URL: redis://localhost:6379
+
+  # ============================================================================
+  # STAGE 5: Build
+  # ============================================================================
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: [unit-tests]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: |
+          if node -e "const scripts=require('./package.json').scripts||{}; process.exit(scripts['build'] ? 0 : 1)"; then
+            npm run build
+          else
+            echo "No build script found. Skipping build step."
+          fi
+
+      - name: Upload build artifacts
+        if: ${{ hashFiles('dist/**') != '' }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: build-output
+          path: dist/
+          retention-days: 7
+
+      - name: Build artifact skipped notice
+        if: ${{ hashFiles('dist/**') == '' }}
+        run: echo "Skipping build artifact upload because dist/ was not generated."
+
+  # ============================================================================
+  # STAGE 6: Policy Guardian Check
+  # ============================================================================
+  policy-check:
+    name: Policy Guardian Validation
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: ${{ github.event_name != 'pull_request' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Check architecture compliance
+        run: |
+          echo "Validating architecture decisions against ADRs..."
+          # Add architecture validation logic here
+          if [ -d "adr" ]; then
+            echo "Found $(ls adr/*.md 2>/dev/null | wc -l) ADR files"
+          fi
+
+      - name: Check license compliance
+        run: |
+          echo "Checking dependency licenses..."
+          npx license-checker --summary --failOn "GPL;AGPL" || true
+
+      - name: Validate API contracts
+        run: |
+          echo "Validating OpenAPI/GraphQL contracts..."
+          if [ -f "contracts/openapi.yaml" ]; then
+            npx @redocly/cli lint contracts/openapi.yaml || true
+          fi
+
+      - name: Check for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          extra_args: --only-verified
+
+      - name: Run Bolt Framework Quality Gates
+        run: |
+          if [[ -f ".boltf/scripts/bash/quality-gates.sh" ]]; then
+            chmod +x .boltf/scripts/bash/quality-gates.sh
+            ./.boltf/scripts/bash/quality-gates.sh --check --full
+          else
+            echo "⚠️ quality-gates.sh not found. Skipping Bolt quality gates."
+          fi
+
+      - name: Upload quality gate results
+        if: always() && (hashFiles('reports/**/*') != '' || hashFiles('coverage/**/*') != '')
+        uses: actions/upload-artifact@v5
+        with:
+          name: quality-gates-results
+          path: |
+            reports/
+            coverage/
+          retention-days: 30
+          if-no-files-found: warn
+
+  # ============================================================================
+  # STAGE 7: Scripts & Agents Validation
+  # Lints every Bash/PowerShell script and runs the Pester + bats test suites.
+  # Pester 3.4 runs on Windows only: its internals call Get-WmiObject, a cmdlet
+  # removed in PowerShell 7, so it cannot run under pwsh on Linux.
+  # Linux script coverage is provided by the bats suite.
+  # ============================================================================
+  lint-scripts:
+    name: Lint Scripts (ShellCheck + PSScriptAnalyzer)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: ShellCheck (Bash scripts, error severity)
+        uses: ludeeus/action-shellcheck@master
+        env:
+          SHELLCHECK_OPTS: -e SC1091
+        with:
+          scandir: './.boltf/scripts/bash'
+          additional_files: 'tests/run-tests.sh'
+          severity: error
+
+      - name: Cache PowerShell modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/powershell/Modules
+          key: psmodules-analyzer-${{ runner.os }}-1.22.0
+          restore-keys: psmodules-analyzer-${{ runner.os }}-
+
+      - name: PSScriptAnalyzer (PowerShell scripts, error severity)
+        shell: pwsh
+        run: |
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          if (-not (Get-Module -ListAvailable PSScriptAnalyzer)) {
+            Install-Module PSScriptAnalyzer -RequiredVersion 1.22.0 -Scope CurrentUser -Force
+          }
+          Import-Module PSScriptAnalyzer
+          $issues = Invoke-ScriptAnalyzer -Path .boltf/scripts/powershell -Recurse -Severity Error
+          if ($issues) {
+            $issues | Format-Table -AutoSize | Out-String | Write-Host
+            Write-Error "PSScriptAnalyzer found $($issues.Count) error-level issue(s)."
+            exit 1
+          }
+          Write-Host "PSScriptAnalyzer: no error-level issues." -ForegroundColor Green
+
+  bats-tests:
+    name: Bash tests (bats)
+    runs-on: ubuntu-latest
+    needs: [lint-scripts]
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install bats
+        run: sudo apt-get update && sudo apt-get install -y bats
+
+      - name: Run bats suite
+        run: bash tests/run-tests.sh
+
+  pester-tests:
+    name: PowerShell tests (Pester v3, Windows)
+    runs-on: windows-latest
+    needs: [lint-scripts]
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Run Pester suite
+        shell: powershell
+        run: ./tests/Run-Tests.ps1 -CI
+
+      - name: Upload Pester results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: pester-results
+          path: tests/pester-results.xml
+          if-no-files-found: ignore
+
+  framework-smoke-bash:
+    name: Framework smoke tests (Bash)
+    runs-on: ubuntu-latest
+    needs: [detect-changes, lint-scripts]
+    if: ${{ github.event_name != 'pull_request' || needs.detect-changes.outputs.framework_changed == 'true' }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install PyYAML
+        run: python -m pip install PyYAML
+
+      - name: Run framework smoke tests
+        run: bash tests/bash/test-smoke-tests.sh --mode full
+
+  framework-smoke-powershell:
+    name: Framework smoke tests (PowerShell)
+    runs-on: windows-latest
+    needs: [detect-changes, lint-scripts]
+    if: ${{ github.event_name != 'pull_request' || needs.detect-changes.outputs.framework_changed == 'true' }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install PyYAML
+        run: python -m pip install PyYAML
+
+      - name: Run framework smoke tests
+        shell: pwsh
+        run: ./tests/powershell/Test-SmokeTests.ps1 -Mode full
+
+  # ============================================================================
+  # Summary Job
+  # ============================================================================
+  ci-summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs:
+      [
+        detect-changes,
+        lint-and-format,
+        security-scan,
+        unit-tests,
+        contract-tests,
+        integration-tests,
+        build,
+        policy-check,
+        lint-scripts,
+        bats-tests,
+        pester-tests,
+        framework-smoke-bash,
+        framework-smoke-powershell,
+      ]
+    if: always()
+    steps:
+      - name: Check all jobs status
+        run: |
+          echo "## CI Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Detect Changed Areas | ${{ needs.detect-changes.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint & Format | ${{ needs.lint-and-format.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Scan | ${{ needs.security-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests | ${{ needs.unit-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Contract Tests | ${{ needs.contract-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Tests | ${{ needs.integration-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Policy Check | ${{ needs.policy-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint Scripts | ${{ needs.lint-scripts.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Bash Tests (bats) | ${{ needs.bats-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| PowerShell Tests (Pester v3) | ${{ needs.pester-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Framework Smoke Tests (Bash) | ${{ needs.framework-smoke-bash.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Framework Smoke Tests (PowerShell) | ${{ needs.framework-smoke-powershell.result }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail if critical jobs failed
+        if: |
+          needs.build.result == 'failure' ||
+          needs.unit-tests.result == 'failure'
+        run: exit 1

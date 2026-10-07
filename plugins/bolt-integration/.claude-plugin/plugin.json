@@ -1,0 +1,7 @@
+{
+  "name": "bolt-integration",
+  "description": "Integraciones y sincronización entre artefactos Bolt Framework y herramientas externas (Azure DevOps sync/wiki).",
+  "version": "0.1.0",
+  "author": { "name": "Bolt Framework" },
+  "skills": ["./skills"]
+}

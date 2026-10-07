@@ -1,0 +1,15 @@
+{
+  "name": "bolt-framework",
+  "owner": { "name": "Bolt Framework" },
+  "plugins": [
+    { "name": "bolt-core", "source": "./plugins/bolt-core", "defaultEnabled": true },
+    { "name": "bolt-frontend", "source": "./plugins/bolt-frontend" },
+    { "name": "bolt-backend", "source": "./plugins/bolt-backend" },
+    { "name": "bolt-cloud-platform", "source": "./plugins/bolt-cloud-platform" },
+    { "name": "bolt-data", "source": "./plugins/bolt-data" },
+    { "name": "bolt-ai", "source": "./plugins/bolt-ai" },
+    { "name": "bolt-crm", "source": "./plugins/bolt-crm" },
+    { "name": "bolt-work-management", "source": "./plugins/bolt-work-management" },
+    { "name": "bolt-integration", "source": "./plugins/bolt-integration" }
+  ]
+}

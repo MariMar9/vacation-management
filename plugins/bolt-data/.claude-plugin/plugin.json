@@ -1,0 +1,6 @@
+{
+  "name": "bolt-data",
+  "description": "Artefactos de modelado y prácticas de datos. Contenido hoy 100% externo (context7/awesome_copilot/awesome_skills) — pendiente de vendorizado en una fase posterior; ver docs/bolt-plugin-distribution-proposal.md.",
+  "version": "0.1.0",
+  "author": { "name": "Bolt Framework" }
+}

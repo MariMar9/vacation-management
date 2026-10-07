@@ -1,0 +1,13 @@
+{
+  "chat.agentFilesLocations": {
+    "plugins/bolt-core/agents": true,
+    "plugins/bolt-frontend/agents": true
+  },
+  "chat.agentSkillsLocations": {
+    "plugins/bolt-core/skills": true,
+    "plugins/bolt-backend/skills": true,
+    "plugins/bolt-cloud-platform/skills": true,
+    "plugins/bolt-frontend/skills": true,
+    "plugins/bolt-work-management/skills": true
+  }
+}

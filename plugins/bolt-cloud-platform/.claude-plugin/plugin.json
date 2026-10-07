@@ -1,0 +1,7 @@
+{
+  "name": "bolt-cloud-platform",
+  "description": "Skills cloud e infraestructura: Azure, DevOps, IaC, Aspire orchestration, observabilidad y seguridad de plataforma.",
+  "version": "0.1.0",
+  "author": { "name": "Bolt Framework" },
+  "skills": ["./skills"]
+}

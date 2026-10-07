@@ -1,0 +1,349 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Bolt Framework overview deck — shared utilities.
+
+   Colours ALWAYS come from the theme's CSS custom properties
+   (@ava-innersource/slidev-theme-base → styles/layout.css). Never hard-code a
+   hex value here: the theme owns the Avanade palette and may remap it.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Layout grids ─────────────────────────────────────────────────────────── */
+.bf-g2,
+.bf-g3,
+.bf-g4,
+.bf-g5 {
+  display: grid;
+  align-items: start;
+}
+.bf-g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.4rem; }
+.bf-g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.1rem; }
+.bf-g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.9rem; }
+.bf-g5 { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.7rem; }
+
+.bf-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 1.4rem;
+  align-items: start;
+}
+
+/* ── Cards ────────────────────────────────────────────────────────────────── */
+.bf-card {
+  border-left: 5px solid var(--avanade-orange);
+  background: var(--avanade-black-10);
+  border-radius: 0 0.4rem 0.4rem 0;
+  padding: 0.65rem 0.8rem;
+}
+.bf-card--aqua    { border-left-color: var(--avanade-aqua); }
+.bf-card--blue    { border-left-color: var(--avanade-blue); }
+.bf-card--green   { border-left-color: var(--avanade-green); }
+.bf-card--purple  { border-left-color: var(--avanade-purple); }
+.bf-card--scarlet { border-left-color: var(--avanade-scarlet); }
+
+.bf-card h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--avanade-black-80);
+  line-height: 1.2;
+}
+.bf-card p,
+.bf-card ul {
+  margin: 0;
+  font-size: 0.76rem;
+  line-height: 1.4;
+  color: var(--avanade-black-60);
+  font-weight: 300;
+}
+.bf-card ul { padding-left: 1rem; }
+.bf-card li + li { margin-top: 0.18rem; }
+
+/* Icon-topped card, for pillar / applicability rows */
+.bf-icard { text-align: left; }
+.bf-icard .bf-icon { margin-bottom: 0.45rem; }
+.bf-icard h3 {
+  margin: 0 0 0.3rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--avanade-black-80);
+  line-height: 1.2;
+}
+.bf-icard p {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.42;
+  color: var(--avanade-black-60);
+  font-weight: 300;
+}
+
+/* ── Statistics ───────────────────────────────────────────────────────────── */
+.bf-stat {
+  font-size: 2.1rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--avanade-orange);
+}
+.bf-stat--aqua    { color: var(--avanade-aqua); }
+.bf-stat--scarlet { color: var(--avanade-scarlet); }
+.bf-stat-label {
+  font-size: 0.74rem;
+  line-height: 1.35;
+  color: var(--avanade-black-60);
+  font-weight: 300;
+  margin-top: 0.2rem;
+}
+
+/* ── Panels: the "what we gained / what it cost" contrast ─────────────────── */
+.bf-panel {
+  padding: 0.85rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--avanade-black-10);
+  border-top: 6px solid var(--avanade-orange);
+  height: 100%;
+}
+.bf-panel--cost { border-top-color: var(--avanade-scarlet); }
+.bf-panel h3 {
+  margin: 0 0 0.6rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--avanade-black-80);
+}
+.bf-panel ul {
+  margin: 0.55rem 0 0;
+  padding-left: 1.05rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--avanade-black-60);
+  font-weight: 300;
+}
+.bf-panel li + li { margin-top: 0.22rem; }
+
+/* ── Compact tables ───────────────────────────────────────────────────────── */
+.bf-tight table {
+  width: 100%;
+  font-size: 0.72rem;
+  line-height: 1.3;
+  border-collapse: collapse;
+}
+.bf-tight th {
+  text-align: left;
+  font-weight: 700;
+  color: var(--avanade-black-80);
+  border-bottom: 2px solid var(--avanade-orange);
+  padding: 0.16rem 0.4rem 0.16rem 0;
+}
+.bf-tight td {
+  padding: 0.16rem 0.4rem 0.16rem 0;
+  border-bottom: 1px dotted var(--avanade-black-20);
+  color: var(--avanade-black-60);
+  font-weight: 300;
+  vertical-align: top;
+}
+.bf-tight code {
+  font-size: 0.68rem;
+  background: var(--avanade-black-10);
+  padding: 0.02rem 0.2rem;
+  border-radius: 0.15rem;
+}
+
+/* ── One-pager column layout ──────────────────────────────────────────────── */
+.bf-col-head {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--avanade-orange);
+  border-bottom: 2px solid var(--avanade-black-20);
+  padding-bottom: 0.22rem;
+  margin-bottom: 0.5rem;
+}
+.bf-col-head--aqua  { color: var(--avanade-aqua); }
+.bf-col-head--blue  { color: var(--avanade-blue); }
+.bf-col-head--green { color: var(--avanade-green); }
+
+.bf-list {
+  margin: 0;
+  padding-left: 0.95rem;
+  font-size: 0.73rem;
+  line-height: 1.4;
+  color: var(--avanade-black-60);
+  font-weight: 300;
+}
+.bf-list li + li { margin-top: 0.24rem; }
+.bf-list strong { color: var(--avanade-black-80); font-weight: 600; }
+
+/* ── Lead-in / kicker paragraph ───────────────────────────────────────────── */
+.bf-lead {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--avanade-black-60);
+  font-weight: 300;
+  max-width: 62rem;
+  margin: 0 0 0.9rem;
+}
+.bf-lead strong { color: var(--avanade-black-80); font-weight: 600; }
+
+/* ── Pull quote (the framework's own words) ───────────────────────────────── */
+.bf-quote {
+  border-left: 5px solid var(--avanade-orange);
+  padding: 0.35rem 0 0.35rem 0.85rem;
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--avanade-black-80);
+  font-weight: 300;
+  font-style: italic;
+}
+
+/* ── Hero band: one headline figure with its qualifying sentence ──────────── */
+.bf-hero {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  padding: 0.7rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--avanade-black-10);
+  border-left: 6px solid var(--avanade-orange);
+}
+.bf-hero-stat {
+  font-size: 2.6rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--avanade-orange);
+  white-space: nowrap;
+}
+.bf-hero-copy {
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: var(--avanade-black-60);
+  font-weight: 300;
+}
+.bf-hero-copy strong { color: var(--avanade-black-80); font-weight: 600; }
+
+/* ── Source / footnote line ───────────────────────────────────────────────── */
+.bf-src {
+  margin-top: 0.75rem;
+  font-size: 0.62rem;
+  line-height: 1.35;
+  color: var(--avanade-black-50);
+  font-weight: 300;
+}
+.bf-src strong { color: var(--avanade-black-60); font-weight: 600; }
+
+/* ── Inline chip row (scopes, stacks) ─────────────────────────────────────── */
+.bf-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+}
+.bf-chip {
+  font-size: 0.66rem;
+  padding: 0.1rem 0.42rem;
+  border: 1px solid var(--avanade-black-20);
+  border-radius: 999px;
+  color: var(--avanade-black-60);
+  background: var(--avanade-white);
+  font-weight: 300;
+  white-space: nowrap;
+}
+/* Denser variant: fits a full scope row on one line at 980px */
+.bf-chips--tight {
+  gap: 0.22rem;
+}
+.bf-chips--tight .bf-chip {
+  font-size: 0.56rem;
+  padding: 0.08rem 0.32rem;
+}
+.bf-chip--on {
+  border-color: var(--avanade-orange);
+  color: var(--avanade-orange-dark);
+  font-weight: 600;
+}
+
+/* Mermaid diagrams: centre them and keep them inside the body area */
+.bf-diagram { display: flex; justify-content: center; }
+.bf-diagram .mermaid { margin: 0 !important; }
+
+/* ── Client references, appendix (slides 14–16) ────────────────────────────── */
+
+/* Two columns: the case on the left, a brand photograph on the right */
+.bf-case {
+  display: grid;
+  grid-template-columns: minmax(0, 1.32fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: stretch;
+}
+.bf-case-photo {
+  width: 100%;
+  height: 100%;
+  max-height: 20.5rem;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  display: block;
+}
+
+/* Delivery status, so three cases at different maturities read honestly */
+.bf-status {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.45rem;
+  border-radius: 0.2rem;
+  color: var(--avanade-white);
+  background: var(--avanade-black-40);
+}
+.bf-status--live    { background: var(--avanade-green); }
+.bf-status--running { background: var(--avanade-aqua); }
+.bf-status--wip     { background: var(--avanade-gold-dark); }
+
+/* Phase chips, colour-matched to the lifecycle row on slide 4 */
+.bf-chip--inception    { border-color: var(--avanade-orange); color: var(--avanade-orange-dark); font-weight: 600; }
+.bf-chip--discovery    { border-color: var(--avanade-aqua);   color: var(--avanade-aqua-dark);   font-weight: 600; }
+.bf-chip--construction { border-color: var(--avanade-blue);   color: var(--avanade-blue-dark);   font-weight: 600; }
+.bf-chip--production   { border-color: var(--avanade-purple); color: var(--avanade-purple-dark); font-weight: 600; }
+
+.slidev-layout .bf-case-label, .bf-case-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--avanade-black-40);
+  margin: 0.6rem 0 0.15rem;
+}
+.slidev-layout .bf-case-body, .bf-case-body {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.42;
+  color: var(--avanade-black-60);
+  font-weight: 300;
+}
+.bf-case-body strong { color: var(--avanade-black-80); font-weight: 600; }
+
+/* The one thing the engagement actually produced */
+.slidev-layout .bf-case-out, .bf-case-out {
+  margin-top: 0.6rem;
+  padding: 0.45rem 0.6rem;
+  border-left: 5px solid var(--avanade-orange);
+  background: var(--avanade-black-10);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--avanade-black-80);
+  font-weight: 300;
+}
+.bf-case-out strong { font-weight: 700; }
+
+/* Appendix marker in the header area */
+.bf-appendix {
+  display: inline-block;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--avanade-black-40);
+  border: 1px solid var(--avanade-black-20);
+  border-radius: 0.2rem;
+  padding: 0.05rem 0.35rem;
+  margin-right: 0.4rem;
+}

@@ -1,0 +1,620 @@
+name: Agents Documentation Sync
+
+# Keeps AGENTS.md in sync with the actual agent files in .github/agents/.
+#
+# Strategy (hybrid — token-efficient):
+#   1. Script layer  — scans *.agent.md files, detects drift vs AGENTS.md (no AI needed)
+#   2. AI layer      — only runs when drift is detected; updates the Agent Index table
+#                      and generates documentation stubs for new agents
+#   3. PR creation   — proposes the diff for human review before merge
+#
+# Agent used: @Bolt Documentation (bolt-docs.agent.md)
+#   Rationale: "Living documentation generator, maintainer and knowledge management system"
+#   is a better semantic fit than bolt-architect for a documentation sync task.
+#
+# AI provider (OpenAI-compatible /chat/completions — same pattern as spec-drift.yml):
+#   Repository variables (optional — defaults to GitHub Models):
+#     vars.AI_ENDPOINT  Full chat-completions URL
+#                       Default: https://models.inference.ai.azure.com/chat/completions
+#     vars.AI_MODEL     Model identifier
+#                       Default: gpt-4o
+#   Repository secret (optional):
+#     secrets.AI_API_KEY  Required for non-GitHub-Models endpoints.
+#     secrets.AGENTS_DOC_SYNC_TOKEN  Optional token for PR creation when the repository
+#                                   does not allow GITHUB_TOKEN to create pull requests.
+#
+#   Provider quick-reference:
+#     GitHub Models   → no vars needed, works out of the box (uses GITHUB_TOKEN)
+#     OpenAI          → endpoint: https://api.openai.com/v1/chat/completions
+#                       model: gpt-4o  |  AI_API_KEY: sk-...
+#     Azure OpenAI    → endpoint: https://<resource>.openai.azure.com/openai/deployments/<dep>/chat/completions?api-version=2024-02-01
+#                       model: gpt-4o  |  AI_API_KEY: <azure-key>
+#     GitHub Copilot  → endpoint: https://api.githubcopilot.com/chat/completions
+#                       model: gpt-4o  |  AI_API_KEY: <copilot-token>
+
+on:
+  schedule:
+    - cron: '0 8 * * 1'  # Every Monday at 08:00 UTC
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: 'Force Agent Index table rebuild even if no new agents detected'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  sync-agents-doc:
+    name: 🤖 Sync AGENTS.md with agent catalog
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # ─────────────────────────────────────────────────────────────────────
+      # 1. Build structured inventory from .github/agents/*.agent.md
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Build agent inventory
+        id: inventory
+        run: |
+          normalize_metadata_value() {
+            printf '%s' "$1" |
+              sed -E "s/^[[:space:]]+//; s/[[:space:]]+$//; s/^['\"]//; s/['\"]$//"
+          }
+
+          AGENT_COUNT=0
+          LIST_FILE=$(mktemp)
+
+          for FILE in $(ls .github/agents/*.agent.md 2>/dev/null | sort); do
+            NAME=$(grep -m1 '^name:' "$FILE" | sed 's/^name:[[:space:]]*//')
+            DESC=$(grep -m1 '^description:' "$FILE" | sed 's/^description:[[:space:]]*//')
+            [ -z "$NAME" ] && NAME="$(basename "$FILE" .agent.md)"
+            NAME=$(normalize_metadata_value "$NAME")
+            DESC=$(normalize_metadata_value "$DESC")
+            echo "| $NAME | $DESC |" >> "$LIST_FILE"
+            AGENT_COUNT=$((AGENT_COUNT + 1))
+          done
+
+          echo "count=$AGENT_COUNT" >> $GITHUB_OUTPUT
+
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "list<<$EOF" >> $GITHUB_OUTPUT
+          cat "$LIST_FILE" >> $GITHUB_OUTPUT
+          echo "$EOF" >> $GITHUB_OUTPUT
+
+          echo "📊 Found $AGENT_COUNT agent files"
+
+      # ─────────────────────────────────────────────────────────────────────
+      # 2. Detect documentation drift between agent files and AGENTS.md
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Detect agent documentation drift
+        id: drift
+        run: |
+          normalize_metadata_value() {
+            printf '%s' "$1" |
+              sed -E "s/^[[:space:]]+//; s/[[:space:]]+$//; s/^['\"]//; s/['\"]$//"
+          }
+
+          HAS_NEW=false
+          HAS_STALE=false
+          NEW_FILE=$(mktemp)
+          STALE_FILE=$(mktemp)
+          CONTENT_FILE=$(mktemp)
+          INVENTORY_NAMES=$(mktemp)
+          DOC_NAMES=$(mktemp)
+
+          for FILE in $(ls .github/agents/*.agent.md 2>/dev/null | sort); do
+            NAME=$(grep -m1 '^name:' "$FILE" | sed 's/^name:[[:space:]]*//')
+            [ -z "$NAME" ] && NAME="$(basename "$FILE" .agent.md)"
+            NAME=$(normalize_metadata_value "$NAME")
+            echo "$NAME" >> "$INVENTORY_NAMES"
+            if ! grep -qF "$NAME" AGENTS.md 2>/dev/null; then
+              HAS_NEW=true
+              echo "- **$NAME** (\`$(basename "$FILE")\`)" >> "$NEW_FILE"
+              # Extract agent body (after second front-matter ---)
+              printf '### NEW AGENT: %s\nFile: %s\n\n' "$NAME" "$FILE" >> "$CONTENT_FILE"
+              awk '/^---$/{c++; if(c==2){f=1;next}} f{print}' "$FILE" | head -c 3000 >> "$CONTENT_FILE"
+              printf '\n\n---\n\n' >> "$CONTENT_FILE"
+              echo "🆕 Undocumented agent found: $NAME"
+            fi
+          done
+
+          if [ -f AGENTS.md ]; then
+            awk '/^## Agent Index$/{f=1;next} /^---$/{if(f){exit}} f{print}' AGENTS.md |
+              grep -oE '\[`@[^`]+`\]' |
+              sed -E 's/^\[`@//; s/`\]$//' |
+              sort -u > "$DOC_NAMES"
+
+            while IFS= read -r DOC_NAME; do
+              if ! grep -Fxq "$DOC_NAME" "$INVENTORY_NAMES"; then
+                HAS_STALE=true
+                echo "- **$DOC_NAME**" >> "$STALE_FILE"
+                echo "🗑️ Stale documented agent found: $DOC_NAME"
+              fi
+            done < "$DOC_NAMES"
+          fi
+
+          echo "has_new=$HAS_NEW" >> $GITHUB_OUTPUT
+          echo "has_stale=$HAS_STALE" >> $GITHUB_OUTPUT
+
+          FORCE="${{ github.event.inputs.force_rebuild }}"
+          if [ "$HAS_NEW" = "true" ] || [ "$HAS_STALE" = "true" ] || [ "$FORCE" = "true" ]; then
+            echo "needs_update=true" >> $GITHUB_OUTPUT
+          else
+            echo "needs_update=false" >> $GITHUB_OUTPUT
+          fi
+
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "new_agents<<$EOF" >> $GITHUB_OUTPUT
+          cat "$NEW_FILE" >> $GITHUB_OUTPUT
+          echo "$EOF" >> $GITHUB_OUTPUT
+
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "stale_agents<<$EOF" >> $GITHUB_OUTPUT
+          cat "$STALE_FILE" >> $GITHUB_OUTPUT
+          echo "$EOF" >> $GITHUB_OUTPUT
+
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "new_content<<$EOF" >> $GITHUB_OUTPUT
+          cat "$CONTENT_FILE" >> $GITHUB_OUTPUT
+          echo "$EOF" >> $GITHUB_OUTPUT
+
+      # ─────────────────────────────────────────────────────────────────────
+      # 3. Extract bolt-docs agent system prompt (used as AI context)
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Extract bolt-docs system prompt
+        id: prompt
+        if: steps.drift.outputs.needs_update == 'true'
+        run: |
+          SYSTEM=$(awk '/^---$/{c++; if(c==2){f=1;next}} f{print}' \
+            .github/agents/bolt-docs.agent.md | head -c 2500)
+
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "system<<$EOF" >> $GITHUB_OUTPUT
+          echo "$SYSTEM" >> $GITHUB_OUTPUT
+          echo "$EOF" >> $GITHUB_OUTPUT
+
+      # ─────────────────────────────────────────────────────────────────────
+      # 4. Call AI to produce updated Agent Index + new agent sections
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Generate documentation updates via AI
+        id: ai
+        if: steps.drift.outputs.needs_update == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AI_ENDPOINT: ${{ vars.AI_ENDPOINT }}
+          AI_MODEL: ${{ vars.AI_MODEL }}
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+          AGENT_SYSTEM: ${{ steps.prompt.outputs.system }}
+          AGENT_LIST: ${{ steps.inventory.outputs.list }}
+          AGENT_COUNT: ${{ steps.inventory.outputs.count }}
+          NEW_AGENTS: ${{ steps.drift.outputs.new_agents }}
+          STALE_AGENTS: ${{ steps.drift.outputs.stale_agents }}
+          NEW_CONTENT: ${{ steps.drift.outputs.new_content }}
+        run: |
+          ENDPOINT="${AI_ENDPOINT:-https://models.inference.ai.azure.com/chat/completions}"
+          MODEL="${AI_MODEL:-gpt-4o}"
+
+          # Use GITHUB_TOKEN only for GitHub-hosted endpoints; require AI_API_KEY otherwise.
+          if [ -n "$AI_API_KEY" ]; then
+            AUTH_TOKEN="$AI_API_KEY"
+          elif [[ "$ENDPOINT" == *"models.inference.ai.azure.com"* ]]; then
+            AUTH_TOKEN="$GITHUB_TOKEN"
+          else
+            echo "❌ AI_API_KEY is required when using a non-GitHub-Models endpoint." >&2
+            exit 1
+          fi
+
+          # Build user message in a temp file to avoid shell escaping issues
+          MSG_FILE=$(mktemp)
+          cat >> "$MSG_FILE" << 'MSGEOF'
+          You are maintaining AGENTS.md for the Bolt Framework repository, which is the canonical
+          reference guide for all available AI agents.
+
+          MSGEOF
+
+          printf '## Complete agent inventory (%s files)\n\n| Agent Name | Description |\n|---|---|\n%s\n\n' \
+            "$AGENT_COUNT" "$AGENT_LIST" >> "$MSG_FILE"
+
+          if [ -n "$NEW_AGENTS" ]; then
+            printf '## Undocumented agents (present in .github/agents/ but MISSING from AGENTS.md)\n\n%s\n\n' \
+              "$NEW_AGENTS" >> "$MSG_FILE"
+            printf '## Content of the new agent files\n\n%s\n\n' \
+              "$NEW_CONTENT" >> "$MSG_FILE"
+          fi
+
+          if [ -n "$STALE_AGENTS" ]; then
+            printf '## Stale documented agents (present in AGENTS.md but MISSING from .github/agents/)\n\n%s\n\n' \
+              "$STALE_AGENTS" >> "$MSG_FILE"
+          fi
+
+          cat >> "$MSG_FILE" << 'TASKEOF'
+          ## Your task
+
+          1. Generate an updated **## Agent Index** table section listing ALL agents.
+             - Keep the existing two-column format: | Agent | Summary |
+             - Keep existing category groupings (Orchestrator, Discovery & Requirements,
+               Architecture & Design, Planning, Implementation, etc.)
+             - Wrap agent names exactly as: [`@Agent Name`](#-agent-name-anchor)
+             - Include every agent from the inventory above — do NOT omit any.
+             - Exclude stale documented agents that are not present in the inventory.
+
+          2. If there are undocumented agents listed above, generate a full documentation
+             section for each one following the exact same structure used in AGENTS.md:
+             Purpose, When to Use It, Prompt Parameters, Built-In Handoffs,
+             Typical Usage, Expected Outcomes.
+
+          Output ONLY these two delimited blocks and nothing else:
+
+          === INDEX_TABLE ===
+          <full updated ## Agent Index section>
+          === END_INDEX ===
+
+          === NEW_SECTIONS ===
+          <new agent documentation markdown, or the single word NONE if there are no new agents>
+          === END_SECTIONS ===
+          TASKEOF
+
+          USER_MSG=$(cat "$MSG_FILE")
+
+          PAYLOAD=$(jq -n \
+            --arg system "$AGENT_SYSTEM" \
+            --arg user   "$USER_MSG" \
+            --arg model  "$MODEL" \
+            '{
+              model: $model,
+              messages: [
+                {role: "system", content: $system},
+                {role: "user",   content: $user}
+              ],
+              max_tokens: 4096,
+              temperature: 0.1
+            }')
+
+          RESPONSE=$(curl -s \
+            -X POST \
+            -H "Authorization: Bearer $AUTH_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD" \
+            "$ENDPOINT" || true)
+
+          AI_OUTPUT=$(printf '%s' "$RESPONSE" | jq -r '.choices[0].message.content // "⚠️ No response from AI."' 2>/dev/null || true)
+          if [ -z "$AI_OUTPUT" ]; then
+            AI_OUTPUT="⚠️ No parseable response from AI."
+          fi
+
+          INDEX_TABLE=$(echo "$AI_OUTPUT" | awk '/^=== INDEX_TABLE ===$/{f=1;next} /^=== END_INDEX ===$/{f=0} f{print}')
+          NEW_SECTIONS=$(echo "$AI_OUTPUT" | awk '/^=== NEW_SECTIONS ===$/{f=1;next} /^=== END_SECTIONS ===$/{f=0} f{print}')
+
+          if [ -z "$INDEX_TABLE" ] || [ -z "$NEW_SECTIONS" ]; then
+            echo "⚠️ AI response did not include the required INDEX_TABLE and NEW_SECTIONS blocks." >&2
+            echo "⚠️ Falling back to deterministic documentation updates." >&2
+            echo "$AI_OUTPUT" >&2
+
+            FALLBACK_INDEX=$(mktemp)
+            FALLBACK_SECTIONS=$(mktemp)
+            FALLBACK_INDEX="$FALLBACK_INDEX" FALLBACK_SECTIONS="$FALLBACK_SECTIONS" NEW_AGENTS="$NEW_AGENTS" python3 - << 'PYEOF'
+          import glob
+          import os
+          import re
+
+          def metadata_value(lines, key):
+              for index, line in enumerate(lines):
+                  if line.startswith(f"{key}:"):
+                      value = line.split(":", 1)[1].strip()
+                      if value in {">", "|"}:
+                          continuation = []
+                          for next_line in lines[index + 1:]:
+                              if not next_line.startswith((" ", "\t")):
+                                  break
+                              continuation.append(next_line.strip())
+                          value = " ".join(continuation)
+                      return value.strip().strip("'\"")
+              return ""
+
+          def agent_anchor(name):
+              slug = name.lower().replace("&", "and")
+              slug = re.sub(r"[^a-z0-9\s-]", "", slug)
+              slug = re.sub(r"[\s-]+", "-", slug).strip("-")
+              return f"#-{slug}"
+
+          def agent_files():
+              for path in sorted(glob.glob(".github/agents/*.agent.md")):
+                  with open(path, "r", encoding="utf-8") as agent_file:
+                      lines = agent_file.read().splitlines()
+                  name = metadata_value(lines, "name") or os.path.basename(path).replace(".agent.md", "")
+                  description = metadata_value(lines, "description")
+                  yield path, name, description
+
+          agents = list(agent_files())
+          with open(os.environ["FALLBACK_INDEX"], "w", encoding="utf-8") as index_file:
+              index_file.write("## Agent Index\n\n")
+              index_file.write("| Agent | Summary |\n")
+              index_file.write("| --- | --- |\n")
+              for _, name, description in agents:
+                  index_file.write(f"| [`@{name}`]({agent_anchor(name)}) | {description} |\n")
+
+          new_names = re.findall(r"^- \*\*(.*?)\*\*", os.environ.get("NEW_AGENTS", ""), flags=re.MULTILINE)
+          descriptions = {name: (path, description) for path, name, description in agents}
+          with open(os.environ["FALLBACK_SECTIONS"], "w", encoding="utf-8") as sections_file:
+              if not new_names:
+                  sections_file.write("NONE\n")
+              for index, name in enumerate(new_names):
+                if index > 0:
+                  sections_file.write("\n---\n</br>\n\n")
+                path, description = descriptions.get(name, (".github/agents/", ""))
+                summary = description or f"Agent definition from {path}."
+                sections_file.write(f"# {name}\n\n")
+                sections_file.write("## Purpose\n\n")
+                sections_file.write(f"The `@{name}` agent is available in `{path}`. {summary}\n\n")
+                sections_file.write("## When to Use It\n\n")
+                sections_file.write(f"Use `@{name}` when the requested work matches this agent's documented responsibility.\n\n")
+                sections_file.write("## Prompt Parameters\n\n")
+                sections_file.write("Provide the goal, relevant file or artifact paths, and any constraints needed to scope the work.\n\n")
+                sections_file.write("## Built-In Handoffs\n\n")
+                sections_file.write("No explicit handoffs are documented in this generated fallback section.\n\n")
+                sections_file.write("## Typical Usage\n\n")
+                sections_file.write("```text\n")
+                sections_file.write(f"@{name} <describe the task>\n")
+                sections_file.write("```\n\n")
+                sections_file.write("## Expected Outcomes\n\n")
+                sections_file.write(f"- Documentation for `@{name}` is present in AGENTS.md.\n")
+                sections_file.write("- The Agent Index links to this section.\n\n")
+          PYEOF
+
+            INDEX_TABLE=$(cat "$FALLBACK_INDEX")
+            NEW_SECTIONS=$(cat "$FALLBACK_SECTIONS")
+          fi
+
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "index_table<<$EOF" >> $GITHUB_OUTPUT
+          echo "$INDEX_TABLE" >> $GITHUB_OUTPUT
+          echo "$EOF" >> $GITHUB_OUTPUT
+
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "new_sections<<$EOF" >> $GITHUB_OUTPUT
+          echo "$NEW_SECTIONS" >> $GITHUB_OUTPUT
+          echo "$EOF" >> $GITHUB_OUTPUT
+
+      # ─────────────────────────────────────────────────────────────────────
+      # 5. Apply AI output to AGENTS.md via inline Python
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Apply updates to AGENTS.md
+        if: steps.drift.outputs.needs_update == 'true'
+        env:
+          INDEX_TABLE: ${{ steps.ai.outputs.index_table }}
+          NEW_SECTIONS: ${{ steps.ai.outputs.new_sections }}
+          STALE_AGENTS: ${{ steps.drift.outputs.stale_agents }}
+        run: |
+          python3 - << 'PYEOF'
+          import os, re
+
+          index_table  = os.environ.get("INDEX_TABLE",  "").strip()
+          new_sections = os.environ.get("NEW_SECTIONS", "").strip()
+          stale_agents = os.environ.get("STALE_AGENTS", "").strip()
+
+          with open("AGENTS.md", "r", encoding="utf-8") as f:
+              content = f.read()
+
+          changed = False
+
+          stale_names = re.findall(r"^- \*\*(.*?)\*\*", stale_agents, flags=re.MULTILINE)
+          for stale_name in stale_names:
+              section_pattern = (
+                r"\n---\n</?br>\n\n"
+                  r"# [^\n]*" + re.escape(stale_name) + r"\n"
+                  r".*?"
+                r"(?=\n---\n</?br>\n\n# |\n## Bolt Framework - Agents Glossary|\Z)"
+              )
+              content, removed = re.subn(section_pattern, "", content, count=1, flags=re.DOTALL)
+              if removed:
+                  changed = True
+                  print(f"✅ Removed stale section for {stale_name}")
+              else:
+                  print(f"⚠️  Stale section not found for {stale_name}")
+
+          # Replace only the Agent Index block before the first section separator.
+          if index_table:
+              if index_table.startswith("## Agent Index"):
+                  replacement = index_table + "\n\n"
+              else:
+                  replacement = "## Agent Index\n\n" + index_table + "\n\n"
+              pattern = r'## Agent Index\n\n.*?(?=\n---\n</?br>)'
+              new_content = re.sub(pattern, replacement, content, flags=re.DOTALL)
+              if new_content != content:
+                  content = new_content
+                  changed = True
+                  print("✅ Agent Index table updated")
+              else:
+                  print("ℹ️  Agent Index table unchanged")
+
+          # Append new agent sections before the glossary, or at end of file
+          if new_sections and new_sections.strip().upper() != "NONE":
+              anchor = "## Bolt Framework - Agents Glossary"
+              insertion = new_sections.strip() + "\n\n---\n</br>\n\n"
+              if anchor in content:
+                  content = content.replace(anchor, insertion + anchor, 1)
+              else:
+                  content = content.rstrip() + "\n\n---\n</br>\n\n" + new_sections.strip() + "\n"
+              changed = True
+              print("✅ New agent sections appended")
+
+          if changed:
+              with open("AGENTS.md", "w", encoding="utf-8") as f:
+                  f.write(content)
+              print("✅ AGENTS.md saved")
+          else:
+              print("ℹ️  No changes applied to AGENTS.md")
+          PYEOF
+
+      # ─────────────────────────────────────────────────────────────────────
+      # 6. Check git diff; open PR only when AGENTS.md actually changed
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Check for changes
+        id: diff
+        run: |
+          if git diff --quiet AGENTS.md; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "📝 No changes detected in AGENTS.md"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            git diff --stat AGENTS.md
+          fi
+
+      - name: Check PR automation permissions
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.AGENTS_DOC_SYNC_TOKEN || secrets.GITHUB_TOKEN }}
+          USING_CUSTOM_TOKEN: ${{ secrets.AGENTS_DOC_SYNC_TOKEN != '' }}
+        run: |
+          if [ "$USING_CUSTOM_TOKEN" = "true" ]; then
+            echo "Using AGENTS_DOC_SYNC_TOKEN; skipping GITHUB_TOKEN workflow-permission preflight."
+            echo "gh pr create will validate the custom token permissions."
+            exit 0
+          fi
+
+          PERMISSIONS_JSON=$(gh api repos/${{ github.repository }}/actions/permissions/workflow 2>/dev/null || true)
+          if [ -z "$PERMISSIONS_JSON" ]; then
+            echo "⚠️ Could not read workflow permission settings; gh pr create will perform the authoritative permission check."
+            exit 0
+          fi
+
+          DEFAULT_PERMISSION=$(echo "$PERMISSIONS_JSON" | jq -r '.default_workflow_permissions // "unknown"')
+          CAN_CREATE_PR=$(echo "$PERMISSIONS_JSON" | jq -r '.can_approve_pull_request_reviews // "unknown"')
+
+          echo "Default workflow permission: $DEFAULT_PERMISSION"
+          echo "Allow GitHub Actions to create and approve pull requests: $CAN_CREATE_PR"
+
+          if [ "$CAN_CREATE_PR" = "false" ]; then
+            echo "❌ GitHub Actions is not allowed to create pull requests in this repository or organization." >&2
+            echo "Enable: Settings → Actions → General → Workflow permissions → Allow GitHub Actions to create and approve pull requests." >&2
+            echo "Or configure AGENTS_DOC_SYNC_TOKEN with Contents: write and Pull requests: write permissions." >&2
+            exit 1
+          fi
+
+          if [ "$CAN_CREATE_PR" != "true" ]; then
+            echo "⚠️ Could not determine the pull-request creation setting from the API response."
+            echo "gh pr create will perform the authoritative permission check."
+          fi
+
+      - name: Create Pull Request
+        id: pr
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.AGENTS_DOC_SYNC_TOKEN || secrets.GITHUB_TOKEN }}
+          NEW_AGENTS_LIST: ${{ steps.drift.outputs.new_agents }}
+          STALE_AGENTS_LIST: ${{ steps.drift.outputs.stale_agents }}
+        run: |
+          WEEK=$(date +"%Y-W%V")
+          BRANCH="docs/agents-sync-$(date +%Y%m%d-%H%M)"
+          MANUAL_PR_URL="${{ github.server_url }}/${{ github.repository }}/pull/new/$BRANCH"
+
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "manual_pr_url=$MANUAL_PR_URL" >> $GITHUB_OUTPUT
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add AGENTS.md
+          git commit -m "docs: sync AGENTS.md with agent catalog [$WEEK]"
+          git push origin "$BRANCH"
+
+          # Create labels if they don't exist yet
+          gh label create "documentation" --color "0075ca" --description "Documentation updates"     2>/dev/null || true
+          gh label create "automated"     --color "cfd3d7" --description "Generated by a workflow"   2>/dev/null || true
+
+          NEW_COUNT=$(echo "$NEW_AGENTS_LIST" | grep -c '^-' || true)
+          STALE_COUNT=$(echo "$STALE_AGENTS_LIST" | grep -c '^-' || true)
+
+          PR_BODY_FILE=$(mktemp)
+          cat > "$PR_BODY_FILE" << PRBODY
+          ## 🤖 Automated AGENTS.md Sync — $WEEK
+
+          This PR was automatically generated by the **Agents Documentation Sync** workflow
+          (\`.github/workflows/agents-doc-sync.yml\`).
+
+          ### 📊 Summary
+          | Metric | Value |
+          |---|---|
+          | Agent files scanned | ${{ steps.inventory.outputs.count }} |
+          | New undocumented agents | $NEW_COUNT |
+          | Stale documented agents | $STALE_COUNT |
+
+          ### What changed
+          $(if [ -n "$NEW_AGENTS_LIST" ] || [ -n "$STALE_AGENTS_LIST" ]; then
+              if [ -n "$NEW_AGENTS_LIST" ]; then
+                printf '**Newly documented agents:**\n\n%s\n\n' "$NEW_AGENTS_LIST"
+              fi
+              if [ -n "$STALE_AGENTS_LIST" ]; then
+                printf '**Removed stale documented agents:**\n\n%s\n' "$STALE_AGENTS_LIST"
+              fi
+            else
+              echo '- Agent Index table refreshed (descriptions or groupings updated)'
+            fi)
+
+          ### Review checklist
+          - [ ] Agent Index table is accurate and complete
+          - [ ] New agent sections (if any) match the content of their \`.agent.md\` files
+          - [ ] No existing agent sections were accidentally removed or truncated
+
+          > Powered by \`@Bolt Documentation\` agent via \`.github/workflows/agents-doc-sync.yml\`
+          PRBODY
+
+          if PR_URL=$(gh pr create \
+            --title "docs: sync AGENTS.md [$WEEK]" \
+            --body-file "$PR_BODY_FILE" \
+            --label "documentation,automated" \
+            --base main 2>pr-create-error.log); then
+            echo "pr_created=true" >> $GITHUB_OUTPUT
+            echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+            echo "✅ Pull Request created: $PR_URL"
+          else
+            echo "pr_created=false" >> $GITHUB_OUTPUT
+            echo "pr_url=" >> $GITHUB_OUTPUT
+            echo "❌ Branch pushed, but GitHub blocked automatic PR creation." >&2
+            cat pr-create-error.log >&2
+            echo "" >&2
+            echo "To fix this, enable repository/org setting: Settings → Actions → General → Workflow permissions → Allow GitHub Actions to create and approve pull requests." >&2
+            echo "Alternatively, configure AGENTS_DOC_SYNC_TOKEN with Contents: write and Pull requests: write permissions." >&2
+            echo "Manual recovery URL for this pushed branch: $MANUAL_PR_URL" >&2
+            exit 1
+          fi
+
+      # ─────────────────────────────────────────────────────────────────────
+      # Job summary (always shown in the Actions run)
+      # ─────────────────────────────────────────────────────────────────────
+      - name: Write job summary
+        if: always()
+        run: |
+          echo "## 🤖 Agents Documentation Sync" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Agent files scanned | ${{ steps.inventory.outputs.count }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Undocumented agents detected | ${{ steps.drift.outputs.has_new }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Stale documented agents detected | ${{ steps.drift.outputs.has_stale }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| AGENTS.md changed | ${{ steps.diff.outputs.changed || 'false' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.diff.outputs.changed }}" = "true" ]; then
+            if [ "${{ steps.pr.outputs.pr_created }}" = "true" ]; then
+              echo "✅ **Pull Request created** with documentation updates: ${{ steps.pr.outputs.pr_url }}" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ **Pull Request creation failed after pushing the documentation branch.**" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "Required fix: enable **Allow GitHub Actions to create and approve pull requests** in repository/org Actions workflow permissions, or configure **AGENTS_DOC_SYNC_TOKEN** with Contents: write and Pull requests: write." >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "Manual recovery URL: ${{ steps.pr.outputs.manual_pr_url }}" >> $GITHUB_STEP_SUMMARY
+            fi
+          elif [ "${{ steps.drift.outputs.needs_update }}" = "true" ]; then
+            echo "⚠️ Drift was detected and AI ran, but AGENTS.md did not change. Check the AI output and apply step logs." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ **No drift detected** — AGENTS.md is in sync with all agent files." >> $GITHUB_STEP_SUMMARY
+          fi

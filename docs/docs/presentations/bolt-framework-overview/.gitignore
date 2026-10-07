@@ -1,0 +1,8 @@
+node_modules/
+dist/
+png-*/
+*.log
+
+# Copias de trabajo renombradas a mano (no las genera el export)
+*-with references.*
+*-with-references.*

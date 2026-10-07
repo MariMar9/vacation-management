@@ -1,0 +1,6 @@
+{
+  "name": "bolt-core",
+  "description": "Metodología Bolt Framework: agentes y skills universales (constitution, DDD, planning, testing discipline, mermaid, markdown, git, github, playwright, etc.).",
+  "version": "0.1.0",
+  "author": { "name": "Bolt Framework" }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "bolt-frontend",
+  "description": "Skills y agentes frontend: Angular/React/Vue, UI/UX, Penpot, Tailwind.",
+  "version": "0.1.0",
+  "author": { "name": "Bolt Framework" }
+}

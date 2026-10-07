@@ -1,0 +1,7 @@
+{
+  "name": "bolt-backend",
+  "description": "Skills backend (.NET/C#, integration/E2E testing, observabilidad Aspire para apps con frontend).",
+  "version": "0.1.0",
+  "author": { "name": "Bolt Framework" },
+  "skills": ["./skills"]
+}

@@ -1,0 +1,86 @@
+# =============================================================================
+# Bolt Framework — Active Scopes Configuration
+# Generated: 2026-10-07 13:33:49
+# =============================================================================
+# This file declares which scopes are active and records all wizard decisions.
+# Each scope injects its own constitution sections from
+#   .boltf/scopes/<scope>/memory/constitution.md
+# The work-management scope is always active (transversal).
+# =============================================================================
+
+project:
+  practice: Apps & Infra      # Practice selection (Phase 3)
+  type: full-stack       # derived from scopes
+  migration-type: green   # green | brown
+  backend-stack-template: dotnet-8 # dotnet-8 | go | nodejs-nestjs | python-fastapi | custom | none
+  work-management-tool: github-projects    # Work item tracking integration (Step 1.5)
+
+  # Development Environment (Step 1.6)
+  local-orchestration: podman     # docker-compose | kubernetes | podman | aspire | none
+  frontend-framework: angular       # react | angular | vue | none
+  cloud-dev-environment: none  # codespaces | devcontainers | both | none
+  container-runtime: podman         # docker | podman | none
+
+active-scopes:
+  - backend
+  - frontend
+  - cloud-platform
+
+# Transversal (always active, not selectable)
+transversal-scopes:
+  - work-management
+
+# ─── Wizard Decisions ───────────────────────────────────────────────────────
+# These capture every choice made during initialization so downstream agents
+# can read them without re-parsing the constitution markdown.
+
+decisions:
+  # Article X — Environments & Configuration
+  environments:
+    enabled: [dev, uat, prod]
+    auto-deploy:
+      dev: true
+      uat: true
+      prod: true
+  config-management: config-files
+  secrets-dev: user-secrets
+  feature-flags: none
+
+  # Article XI — CI/CD Pipeline
+  cicd:
+    platform: github-actions
+    iac-tool: terraform
+    deploy-strategy: rolling
+    branch-strategy: github-flow
+    pipeline-stages:
+      application: [build, lint-format, unit-tests, integration-tests, architecture-tests, mutation-tests, security-scan, container-build, container-scan]
+      infrastructure: [iac-lint, iac-validation, security-scan, cost-estimation, compliance-check]
+      deployment: [deploy-dev, deploy-uat, deploy-prod]
+    thresholds:
+      unit-test-coverage: 80
+      mutation-score: 60
+
+  # Article XII — Observability
+  observability: otel-azure
+  infra-monitoring: [resource-health, activity-logs]
+
+  # Article XVI — Security Policies
+  security:
+    vnet: true
+    private-endpoints: true
+    waf: false
+    encryption-keys: azure-managed
+    pii-handling: encryption
+    compliance: [gdpr, hipaa]
+
+  # Frontend scope decisions
+  frontend:
+    design-tool: none      # penpot-local | penpot-remote | none
+
+# Base constitution articles (always present):
+#   I   — Project Scope & Type
+#   X   — Environments & Configuration
+#   XI  — CI/CD Pipeline
+#   XII — Observability
+#   XVI — Security Policies
+#   XIX — Governance
