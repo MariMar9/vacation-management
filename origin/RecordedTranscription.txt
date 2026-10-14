@@ -1,0 +1,78 @@
+[Cliente]: ¿Tenéis que aceptarlo, Eh?
+[Cliente]: Pero por si tenéis preguntas durante la sesión.
+[Cliente]: Pues quedas tú a Alex y la Rave.
+[Cliente]: Tenéis que darle al micro para que os salga el mensaje.
+[Cliente]: ¿Has hecho?
+[Cliente]: Que si te tienes que desconectar le has dado al micro, vale, pero me tengo que descontar en 12 minutos. Ya no pasa nada. ¿Entonces, cuál es el objetivo? Mira, quiero que construyamos una aplicación de aprobación de turnos de vacaciones. Tenemos un departamento que son 500 personas.
+[Cliente]: Este departamento de 500 personas.
+[Cliente]: ¿Tiene diferentes proyectos?
+[Cliente]: Con diferentes jefes de proyectos.
+[Cliente]: Tenemos aproximadamente unos.
+[Cliente]: 5040 proyectos a la vez del número varia.
+[Cliente]: ¿Qué es lo que sucede que tenemos que aprobar las vacaciones tanto a nivel de proyecto como a nivel departamental?
+[Cliente]: 1 de los objetivos es que podamos ser capaces de detectar.
+[Cliente]: A ambos niveles.
+[Cliente]: El porcentaje de personas que están pidiéndose vacaciones a la vez en un mismo periodo de tiempo.
+[Cliente]: ¿De forma que un proyecto?
+[Cliente]: ¿Gestiona cuántas personas pueden pedir vacaciones a la vez?
+[Cliente]: En pérdida de tiempo.
+[Cliente]: Y el responsable de proyecto tiene que tener esa capacidad de de verlo valorarlo, aprobar o el echa cerrar colecciones y a la vez el responsable departamental también necesita saber cuánta gente se está cogiendo vacaciones, pero al nivel de todo el departamento.
+[Cliente]: En un determinado periodo de.
+[Cliente]: Determinado periodo de tiempo lo podemos dejar en en semanas o días o como veáis vosotros.
+[Cliente]: No sé si tenéis más preguntas o.
+[Cliente]: La población está de 500 personas, deberíamos tenerla ya estructurada por departamentos y se supone que solo hay un nivel.
+[Cliente]: ¿De profundidad, de jerarquía o hay varios medidas de profundidad, jerarquía y por tanto necesitamos acceso a Google, organización que nos diga, pues mira, esta organización de 600 personas se estructura así y lo que me interesa es saber que dado 1 de esos niveles que yo escoja según me interese la el sistema me devuelva esa información que estás diciendo cuántas personas en un periodo de tiempo en concreto?
+[Cliente]: Han pedido de vacaciones si son 1000 cuentas y hay, por ejemplo, puede haber un departamento tan pequeño que sea de cuatro personas, y ahí es muy crítico saber que no todos han pedido vacaciones en la primera semana de agosto.
+[Cliente]: No hay buena pregunta, no, la aplicación es solo para un departamento, es es departamental, la pagamos nosotros.
+[Cliente]: Si la información de qué personas pertenecen al departamento sale de un sistema que no conozco Recursos Humanos que llaman service Now.
+[Cliente]: ¿Pero en la información organizativa, es decir, quién es el jefe de quién?
+[Cliente]: ¿Ya qué proyecto pertenece sale de directorio activo?
+[Cliente]: O sea, que efectivamente tenemos fuentes externas.
+[Cliente]: Service Now nos dice quién está dentro del departamento y directorio Activo, nos dice el proyecto al que o sea mejor dicho quién es el responsable de proyecto y quiénes están bajo ese el orden de ser responsables.
+[Cliente]: Y para y para departamento, que son muy grandes, por lo menos por por ejemplo, de 50 personas va a haber solamente, o sea, solamente va a haber un aprobador de vacaciones o o se va a poder delegar va a haber.
+[Cliente]: Vale el el departamento son unos 500, solo lo vamos a pagar nosotros y otros departamentos quieren la misma aplicación. Ya lo veremos, vale, pero hay un aprobador que es el del proyecto. Vale, si el aprobador del proyecto.
+[Cliente]: ¿No a podría delegar, EH? La aprobación en otras personas de su mismo proyecto, vale, pero si no aprueba en un determinado tiempo tiene que salir una alarma el responsable del departamento.
+[Cliente]: Para que el responsable del departamento apruebe.
+[Cliente]: Por alarma, por correo electrónico, entiendo o a mí me gustaría si por correo electrónico o por teams.
+[Cliente]: O por ambas, la de teams es más directa, pero la de correo electrónico es permanente, permite auditoría, mientras que la de teams al cabo de x días desaparece y nadie.
+[Cliente]: ¿Sabe lo que ha pasado? Pues pongamos primero por correo electrónico y opcionalmente por teams.
+[Cliente]: ¿Con algún tipo de voto?
+[Cliente]: Sirve refworkings con que sea un un chat diciendo Oye.
+[Cliente]: Fulanito está pidiendo aprobación de vacaciones a este periodo.
+[Cliente]: Con eso me llega, sí. Además, hay un enlace que te permita navegar a la aplicación.
+[Cliente]: Que te permita probarlo. De momento empecemos con con un enlace y luego, ya que luego ya la tarjetas adaptativas.
+[Cliente]: Desde el punto de vista técnico se quiere integrar esta aplicación nueva.
+[Cliente]: Dentro de de un.
+[Cliente]: Estructura ya existente como azure o Amazon si la la queremos en la nube, tenemos en en azure y pensad que aunque son 500 personas en el departamento que no es un número muy grande de usuarios, esto es estacional.
+[Cliente]: Así que podéis esperar que la mayor parte de la gente empiece a entrar a solicitar vacaciones antes del verano.
+[Cliente]: ¿Y antes de Semana Santa o antes de Navidad y el resto del tiempo?
+[Cliente]: Nadie la esté usando o casi nadie o muy se ha uso muy puntual.
+[Cliente]: Tienes que escalar dependiendo de la estación, no queremos estar pagando.
+[Cliente]: Una piedra en todo el tío.
+[Cliente]: Vale y integración con, por ejemplo, dentro de dentro de la empresa con sistemas tipo myscaturing o algo así para para hacer una precarga de vacaciones o o poder validar validaciones de de algún tipo.
+[Cliente]: Si en Service Now se tendrá que enviar el listado de vacaciones aprobadas, solo las aprobadas por el por el cada 1 de los responsables.
+[Cliente]: Pero eso que dices, Juan, es una descarga, es una abstracción, es.
+[Cliente]: Una extracción sin pero no es.
+[Cliente]: Un trigger de otro proceso.
+[Cliente]: Que sea una sincronización en tiempo real para nada, o sea, con con que haya una descarga de las actualizaciones, una descarga nocturna es más que suficiente.
+[Cliente]: Vale, lo que sí que tiene que haber también es un proceso de cancelación.
+[Cliente]: De las vacaciones.
+[Cliente]: No sé, no se lo he preguntado.
+[Cliente]: Cuando o sea, si se aprueban o se cancelan, habrá que notificárselas también a los usuarios, entiendo.
+[Cliente]: Sí, vale, y algún tipo de mecanismo de cancelado que os propongo el usuario no a ver, el el usuario tiene que poderlas cancelar y el responsable puede rechazarlas.
+[Cliente]: Pero no, no vamos a proponer alternativas, o sea el el responsable acepto rechazo.
+[Cliente]: ¿Vale, pero pueden evitarse, puede el usuario?
+[Cliente]: ¿Sí, para eso tiene que cancelar las previas, vale? Pues tiene que lidiar en otra predicción en Barcelona.
+[Cliente]: Una nueva.
+[Cliente]: Luego ya veremos lo de la edición.
+[Cliente]: Quiero que sea fácil de ver.
+[Cliente]: Los calendarios, es decir, el usuario tiene que ser, tiene fácil ver.
+[Cliente]: ¿Cuándo ha ido vacaciones, cuáles las tiene aprobadas y cuáles no?
+[Cliente]: Y los responsables tienen que ver de manera sencilla qué vacaciones ha pedido cada usuario y, sobre todo, como os decía, de manera muy visual, cuando un periodo de tiempo está sobresolicitado.
+[Cliente]: ¿Para que le llame la atención y diga, Ah, bueno, estoy viendo esta semana de julio en la que mi equipo está pidiendo vacaciones más allá de un 70% que le sea fácil de ver, vale?
+[Cliente]: Yo creo que con esto tendríamos un envity.
+[Cliente]: Sí, me parece.
+[Cliente]: ¿Que hacer?
+[Cliente]: Lo vamos aquí por terminado.
+[Cliente]: O tendríais que hacer más preguntas.
+[Cliente]: Por ahí lo damos aquí por término, entonces veo Alex Kellogg.

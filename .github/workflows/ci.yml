@@ -68,7 +68,7 @@ jobs:
           integration_changed=false
           framework_changed=false
 
-          if grep -Eq '(^contracts/|^specs/.*/contracts/|^\.github/workflows/contract-tests\.yml$|^package(-lock)?\.json$)' changed-files.txt; then
+          if grep -Eq '(^contracts/|^specs/.*/(contracts/|tests/.*\.feature$)|^\.github/workflows/contract-tests\.yml$|^package(-lock)?\.json$)' changed-files.txt; then
             contracts_changed=true
           fi
 
@@ -94,23 +94,36 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: src/frontend/package-lock.json
 
       - name: Install dependencies
         run: npm ci
+        working-directory: src/frontend
 
       - name: Run ESLint
         run: npm run lint --if-present
+        working-directory: src/frontend
 
       - name: Check formatting (Prettier)
         run: npm run format:check --if-present
+        working-directory: src/frontend
 
       - name: TypeScript type check
         run: npm run typecheck --if-present
+        working-directory: src/frontend
+
+      - name: Check .NET formatting
+        run: dotnet format src/backend/VacationManagement.sln --verify-no-changes
 
   security-scan:
     name: Security Scan
@@ -121,6 +134,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: src/frontend/package-lock.json
 
       - name: Detect JS/TS sources for CodeQL
         id: detect-js-ts
@@ -171,8 +191,9 @@ jobs:
             echo "::notice::Skipping CodeQL because GitHub Advanced Security is not enabled for this repository (visibility=${repository_visibility}, advanced_security=${advanced_security_status})."
           fi
 
-      - name: Run npm audit
+      - name: Run frontend dependency audit
         run: npm audit --audit-level=high
+        working-directory: src/frontend
         continue-on-error: true
 
       - name: Run Trivy vulnerability scanner
@@ -223,25 +244,29 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: src/frontend/package-lock.json
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
 
       - name: Install dependencies
         run: npm ci
+        working-directory: src/frontend
 
       - name: Run unit tests with coverage
-        run: |
-          if node -e "const scripts=require('./package.json').scripts||{}; process.exit(scripts['test:unit'] ? 0 : 1)"; then
-            npm run test:unit -- --coverage
-          elif node -e "const scripts=require('./package.json').scripts||{}; process.exit(scripts['test'] ? 0 : 1)"; then
-            npm run test -- --coverage
-          else
-            echo "No unit test script found (test:unit/test). Skipping unit tests."
-          fi
+        run: npm test -- --no-watch --browsers=ChromeHeadless --code-coverage
+        working-directory: src/frontend
+
+      - name: Run .NET unit tests with coverage
+        run: dotnet test src/backend/VacationManagement.sln --collect:"XPlat Code Coverage" --logger "console;verbosity=minimal"
 
       - name: Upload coverage report
-        if: ${{ hashFiles('coverage/lcov.info') != '' }}
+        if: ${{ hashFiles('src/frontend/coverage/**/lcov.info') != '' }}
         uses: codecov/codecov-action@v5
         with:
-          files: ./coverage/lcov.info
+          files: ./src/frontend/coverage/**/lcov.info
           fail_ci_if_error: false
 
       - name: Check coverage threshold
@@ -270,12 +295,20 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: src/frontend/package-lock.json
 
       - name: Install dependencies
         run: npm ci
+        working-directory: src/frontend
 
-      - name: Run Cucumber/Gherkin tests
-        run: npm run test:contracts --if-present
+      - name: Parse Gherkin specifications
+        run: npx --yes gherkin-lint $(find specs -type f -name '*.feature' -print)
+
+      - name: Lint feature OpenAPI contracts
+        run: |
+          for spec in specs/*/contracts/openapi.yaml; do
+            npx --yes @redocly/cli lint "$spec"
+          done
 
       - name: Upload test results
         uses: actions/upload-artifact@v5
@@ -300,48 +333,23 @@ jobs:
         (needs.contract-tests.result == 'success' || needs.contract-tests.result == 'skipped') &&
         (github.event_name != 'pull_request' || needs.detect-changes.outputs.integration_changed == 'true')
       }}
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      redis:
-        image: redis:7
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          dotnet-version: '8.0.x'
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run integration tests
-        run: npm run test:integration --if-present
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
-          REDIS_URL: redis://localhost:6379
+      - name: Run integration tests when project exists
+        run: |
+          projects=$(find tests -type f -name '*IntegrationTests.csproj' -print)
+          if [[ -n "$projects" ]]; then
+            while IFS= read -r project; do dotnet test "$project" --logger "console;verbosity=minimal"; done <<< "$projects"
+          else
+            echo "No .NET integration-test project exists yet; external boundaries are covered by local contract simulators."
+          fi
 
   # ============================================================================
   # STAGE 5: Build
@@ -359,28 +367,34 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: src/frontend/package-lock.json
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
 
       - name: Install dependencies
         run: npm ci
+        working-directory: src/frontend
 
-      - name: Build application
-        run: |
-          if node -e "const scripts=require('./package.json').scripts||{}; process.exit(scripts['build'] ? 0 : 1)"; then
-            npm run build
-          else
-            echo "No build script found. Skipping build step."
-          fi
+      - name: Build frontend
+        run: npm run build
+        working-directory: src/frontend
+
+      - name: Build .NET solution
+        run: dotnet build src/backend/VacationManagement.sln --configuration Release
 
       - name: Upload build artifacts
-        if: ${{ hashFiles('dist/**') != '' }}
+        if: ${{ hashFiles('src/frontend/dist/**') != '' }}
         uses: actions/upload-artifact@v5
         with:
           name: build-output
-          path: dist/
+          path: src/frontend/dist/
           retention-days: 7
 
       - name: Build artifact skipped notice
-        if: ${{ hashFiles('dist/**') == '' }}
+        if: ${{ hashFiles('src/frontend/dist/**') == '' }}
         run: echo "Skipping build artifact upload because dist/ was not generated."
 
   # ============================================================================
@@ -411,9 +425,10 @@ jobs:
       - name: Validate API contracts
         run: |
           echo "Validating OpenAPI/GraphQL contracts..."
-          if [ -f "contracts/openapi.yaml" ]; then
-            npx @redocly/cli lint contracts/openapi.yaml || true
-          fi
+          for spec in specs/*/contracts/openapi.yaml; do
+            test -f "$spec" || continue
+            npx --yes @redocly/cli lint "$spec"
+          done
 
       - name: Check for secrets
         uses: trufflesecurity/trufflehog@main

@@ -1,0 +1,12 @@
+C:\code\vacation-management\src\backend\VacationManagement.Domain\bin\Debug\net8.0\VacationManagement.Domain.deps.json
+C:\code\vacation-management\src\backend\VacationManagement.Domain\bin\Debug\net8.0\VacationManagement.Domain.dll
+C:\code\vacation-management\src\backend\VacationManagement.Domain\bin\Debug\net8.0\VacationManagement.Domain.pdb
+C:\code\vacation-management\src\backend\VacationManagement.Domain\obj\Debug\net8.0\VacationManagement.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\code\vacation-management\src\backend\VacationManagement.Domain\obj\Debug\net8.0\VacationManagement.Domain.AssemblyInfoInputs.cache
+C:\code\vacation-management\src\backend\VacationManagement.Domain\obj\Debug\net8.0\VacationManagement.Domain.AssemblyInfo.cs
+C:\code\vacation-management\src\backend\VacationManagement.Domain\obj\Debug\net8.0\VacationManagement.Domain.csproj.CoreCompileInputs.cache
+C:\code\vacation-management\src\backend\VacationManagement.Domain\obj\Debug\net8.0\VacationManagement.Domain.sourcelink.json
+C:\code\vacation-management\src\backend\VacationManagement.Domain\obj\Debug\net8.0\VacationManagement.Domain.dll
+C:\code\vacation-management\src\backend\VacationManagement.Domain\obj\Debug\net8.0\refint\VacationManagement.Domain.dll
+C:\code\vacation-management\src\backend\VacationManagement.Domain\obj\Debug\net8.0\VacationManagement.Domain.pdb
+C:\code\vacation-management\src\backend\VacationManagement.Domain\obj\Debug\net8.0\ref\VacationManagement.Domain.dll

@@ -1,0 +1,6 @@
+flowchart LR
+    RequestContext["📋 F-001<br/>Request lifecycle"] -->|"request reference and eligibility"| ApprovalContext["✅ F-002<br/>Approval Workflow"]
+    OrganizationContext["🏢 F-005<br/>Approver and project membership data"] -->|"approver mapping and project membership"| ApprovalContext
+    IdentityContext["🔐 F-006<br/>Identity and authorization policy"] -->|"actor identity and allowed scope"| ApprovalContext
+    ApprovalContext -->|"decision event; notification rules open"| NotificationContext["🔔 F-004<br/>Notifications and escalation"]
+    ApprovalContext -.->|"export eligibility depends on unresolved finality"| ExportContext["📤 F-005<br/>ServiceNow export"]

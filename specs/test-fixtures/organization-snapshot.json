@@ -1,0 +1,56 @@
+{
+  "snapshotVersion": "test-v1",
+  "generatedAt": "2026-10-09T02:00:00+02:00",
+  "department": {
+    "departmentId": "DEPT-TEST-001",
+    "name": "Synthetic Department"
+  },
+  "employees": [
+    { "employeeId": "EMP-TEST-001", "active": true },
+    { "employeeId": "EMP-TEST-002", "active": true },
+    { "employeeId": "EMP-TEST-003", "active": true },
+    { "employeeId": "EMP-TEST-004", "active": true },
+    { "employeeId": "EMP-TEST-005", "active": true },
+    { "employeeId": "EMP-TEST-006", "active": true },
+    { "employeeId": "EMP-TEST-007", "active": true },
+    { "employeeId": "EMP-TEST-008", "active": true },
+    { "employeeId": "EMP-TEST-009", "active": true },
+    { "employeeId": "EMP-TEST-010", "active": true }
+  ],
+  "projects": [
+    { "projectId": "PRJ-TEST-ALPHA", "departmentId": "DEPT-TEST-001" },
+    { "projectId": "PRJ-TEST-BETA", "departmentId": "DEPT-TEST-001" }
+  ],
+  "memberships": [
+    { "employeeId": "EMP-TEST-001", "projectId": "PRJ-TEST-ALPHA" },
+    { "employeeId": "EMP-TEST-002", "projectId": "PRJ-TEST-ALPHA" },
+    { "employeeId": "EMP-TEST-003", "projectId": "PRJ-TEST-ALPHA" },
+    { "employeeId": "EMP-TEST-004", "projectId": "PRJ-TEST-ALPHA" },
+    { "employeeId": "EMP-TEST-005", "projectId": "PRJ-TEST-ALPHA" },
+    { "employeeId": "EMP-TEST-006", "projectId": "PRJ-TEST-ALPHA" },
+    { "employeeId": "EMP-TEST-007", "projectId": "PRJ-TEST-BETA" },
+    { "employeeId": "EMP-TEST-008", "projectId": "PRJ-TEST-BETA" },
+    { "employeeId": "EMP-TEST-009", "projectId": "PRJ-TEST-BETA" },
+    { "employeeId": "EMP-TEST-010", "projectId": "PRJ-TEST-BETA" }
+  ],
+  "approverAssignments": [
+    {
+      "scopeType": "Project",
+      "scopeId": "PRJ-TEST-ALPHA",
+      "approverId": "EMP-TEST-009",
+      "role": "ProjectApprover"
+    },
+    {
+      "scopeType": "Project",
+      "scopeId": "PRJ-TEST-BETA",
+      "approverId": "EMP-TEST-010",
+      "role": "ProjectApprover"
+    },
+    {
+      "scopeType": "Department",
+      "scopeId": "DEPT-TEST-001",
+      "approverId": "EMP-TEST-008",
+      "role": "DepartmentApprover"
+    }
+  ]
+}

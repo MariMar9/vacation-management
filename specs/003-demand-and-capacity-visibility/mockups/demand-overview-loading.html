@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>F-003 - Demand overview - View - Loading</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+  <body class="antialiased min-h-screen bg-zinc-50 text-zinc-900">
+    <header
+      class="border-b border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
+    >
+      <strong>Mockup - </strong
+      ><span
+        >Feature: <code>003-demand-and-capacity-visibility</code> - Flow:
+        <code>demand-overview</code> - Step: <code>view</code> - State:
+        <code>loading</code> - Optimised for: mobile / tablet / desktop.</span
+      >
+    </header>
+    <main
+      class="mx-auto max-w-6xl p-4 md:p-8"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <p class="text-sm text-zinc-500">Approver view</p>
+      <h1 class="mb-6 text-2xl font-semibold">Vacation demand</h1>
+      <div class="mb-5 grid gap-4 sm:grid-cols-2">
+        <div class="h-16 border border-zinc-300 bg-zinc-200"></div>
+        <div class="h-16 border border-zinc-300 bg-zinc-200"></div>
+      </div>
+      <h2 class="mb-3 text-lg font-semibold">Loading approved demand data</h2>
+      <div
+        aria-label="Loading demand view"
+        class="min-h-48 border border-zinc-300 bg-zinc-200"
+      ></div>
+    </main>
+  </body>
+</html>

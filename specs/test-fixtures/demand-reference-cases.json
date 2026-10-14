@@ -1,0 +1,83 @@
+{
+  "profile": "synthetic-test-only",
+  "cases": [
+    {
+      "name": "unique-approved-people-at-threshold",
+      "scopeType": "Department",
+      "scopeId": "DEPT-TEST-001",
+      "fromDate": "2026-12-01",
+      "toDate": "2026-12-31",
+      "activeMemberCount": 10,
+      "requests": [
+        {
+          "requestId": "REQ-TEST-A",
+          "requesterId": "EMP-TEST-001",
+          "startDate": "2026-12-01",
+          "endDate": "2026-12-05",
+          "status": "Approved"
+        },
+        {
+          "requestId": "REQ-TEST-B",
+          "requesterId": "EMP-TEST-001",
+          "startDate": "2026-12-20",
+          "endDate": "2026-12-22",
+          "status": "Approved"
+        },
+        {
+          "requestId": "REQ-TEST-C",
+          "requesterId": "EMP-TEST-002",
+          "startDate": "2026-12-10",
+          "endDate": "2026-12-12",
+          "status": "Approved"
+        },
+        {
+          "requestId": "REQ-TEST-D",
+          "requesterId": "EMP-TEST-003",
+          "startDate": "2026-12-30",
+          "endDate": "2027-01-03",
+          "status": "Approved"
+        },
+        {
+          "requestId": "REQ-TEST-E",
+          "requesterId": "EMP-TEST-004",
+          "startDate": "2026-12-01",
+          "endDate": "2026-12-05",
+          "status": "PendingProjectApproval"
+        },
+        {
+          "requestId": "REQ-TEST-F",
+          "requesterId": "EMP-TEST-005",
+          "startDate": "2026-12-01",
+          "endDate": "2026-12-05",
+          "status": "Rejected"
+        },
+        {
+          "requestId": "REQ-TEST-G",
+          "requesterId": "EMP-TEST-006",
+          "startDate": "2026-12-01",
+          "endDate": "2026-12-05",
+          "status": "Cancelled"
+        }
+      ],
+      "expected": {
+        "peopleOnApprovedVacation": 3,
+        "demandPercentage": 30,
+        "thresholdExceeded": false
+      }
+    },
+    {
+      "name": "zero-denominator",
+      "scopeType": "Project",
+      "scopeId": "PRJ-TEST-EMPTY",
+      "fromDate": "2026-12-01",
+      "toDate": "2026-12-31",
+      "activeMemberCount": 0,
+      "requests": [],
+      "expected": {
+        "peopleOnApprovedVacation": 0,
+        "demandPercentage": null,
+        "thresholdExceeded": false
+      }
+    }
+  ]
+}

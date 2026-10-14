@@ -7,11 +7,15 @@ on:
   push:
     paths:
       - 'contracts/**'
+      - 'specs/**/contracts/**'
+      - 'specs/**/*.feature'
       - 'src/**'
       - 'tests/**/*.feature'
   pull_request:
     paths:
       - 'contracts/**'
+      - 'specs/**/contracts/**'
+      - 'specs/**/*.feature'
       - 'src/**'
       - 'tests/**/*.feature'
   workflow_dispatch:
@@ -32,16 +36,22 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: src/frontend/package-lock.json
 
       - name: Install dependencies
         run: npm ci
+        working-directory: src/frontend
 
       - name: Validate OpenAPI specs
         run: |
-          if [ -f "contracts/openapi.yaml" ]; then
-            echo "Validating OpenAPI specification..."
-            npx @redocly/cli lint contracts/openapi.yaml
-          fi
+          for spec in specs/*/contracts/openapi.yaml; do
+            test -f "$spec" || continue
+            echo "Validating $spec..."
+            npx --yes @redocly/cli lint "$spec"
+          done
+
+      - name: Validate Gherkin syntax
+        run: npx --yes gherkin-lint $(find specs -type f -name '*.feature' -print)
 
       - name: Validate AsyncAPI specs
         run: |
@@ -73,13 +83,16 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: src/frontend/package-lock.json
 
       - name: Install dependencies
         run: npm ci
+        working-directory: src/frontend
 
       - name: Run Cucumber tests
         run: |
           npm run test:cucumber --if-present || echo "No Cucumber tests configured"
+        working-directory: src/frontend
 
       - name: Generate Cucumber report
         if: always()
@@ -115,17 +128,21 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: src/frontend/package-lock.json
 
       - name: Install dependencies
         run: npm ci
+        working-directory: src/frontend
 
       - name: Run Pact consumer tests
         run: |
           npm run test:pact:consumer --if-present || echo "No Pact consumer tests"
+        working-directory: src/frontend
 
       - name: Run Pact provider verification
         run: |
           npm run test:pact:provider --if-present || echo "No Pact provider tests"
+        working-directory: src/frontend
 
       - name: Publish Pact contracts
         if: github.ref == 'refs/heads/main'
@@ -155,11 +172,7 @@ jobs:
 
       - name: Validate Gherkin syntax
         run: |
-          if command -v gherkin-lint &> /dev/null; then
-            gherkin-lint contracts/**/*.feature tests/**/*.feature
-          else
-            echo "Gherkin linter not installed, skipping syntax check"
-          fi
+          npx --yes gherkin-lint $(find specs -type f -name '*.feature' -print)
 
       - name: Check for missing scenarios
         run: |
@@ -174,12 +187,12 @@ jobs:
           echo "|---------------|-------|--------|" >> $GITHUB_STEP_SUMMARY
           
           FEATURE_COUNT=$(find . -name "*.feature" -type f 2>/dev/null | wc -l)
-          OPENAPI=$([ -f "contracts/openapi.yaml" ] && echo "✅" || echo "❌")
+          OPENAPI=$(find specs -type f -path '*/contracts/openapi.yaml' | wc -l)
           ASYNCAPI=$([ -f "contracts/asyncapi.yaml" ] && echo "✅" || echo "❌")
           GRAPHQL=$([ -f "contracts/schema.graphql" ] && echo "✅" || echo "❌")
           
           echo "| Feature Files | $FEATURE_COUNT | ✅ |" >> $GITHUB_STEP_SUMMARY
-          echo "| OpenAPI | - | $OPENAPI |" >> $GITHUB_STEP_SUMMARY
+          echo "| OpenAPI specs | $OPENAPI | ✅ |" >> $GITHUB_STEP_SUMMARY
           echo "| AsyncAPI | - | $ASYNCAPI |" >> $GITHUB_STEP_SUMMARY
           echo "| GraphQL | - | $GRAPHQL |" >> $GITHUB_STEP_SUMMARY
 
@@ -204,11 +217,14 @@ jobs:
         run: |
           echo "Comparing contracts between branches..."
           
-          # Compare OpenAPI specs
-          if [ -f "contracts/openapi.yaml" ] && [ -f "base/contracts/openapi.yaml" ]; then
-            echo "## OpenAPI Changes" >> $GITHUB_STEP_SUMMARY
-            diff contracts/openapi.yaml base/contracts/openapi.yaml || echo "Changes detected"
-          fi
+          for spec in specs/*/contracts/openapi.yaml; do
+            test -f "$spec" || continue
+            base_spec="base/$spec"
+            if [ -f "$base_spec" ]; then
+              echo "## Changes: $spec" >> $GITHUB_STEP_SUMMARY
+              diff -u "$base_spec" "$spec" || true
+            fi
+          done
 
       - name: Check for breaking changes
         run: |

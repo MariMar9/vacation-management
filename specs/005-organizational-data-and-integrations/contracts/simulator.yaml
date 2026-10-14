@@ -1,0 +1,36 @@
+version: 0.1.0
+status: test-project-simulator-only
+not-a-provider-contract: true
+externalCalls: disabled
+organizationSnapshot:
+  schedule: daily-at-02:00-Europe-Madrid
+  envelope:
+    required: [snapshotVersion, generatedAt, department, employees, projects, memberships, approverAssignments]
+  constraints:
+    departmentId: DEPT-TEST-001
+    employeeIdPattern: '^EMP-TEST-[A-Z0-9-]+$'
+    projectIdPattern: '^PRJ-TEST-[A-Z0-9-]+$'
+    membershipSemantics: direct-only
+    projectApproversPerProject: exactly-one-active
+    departmentApprovers: exactly-one-active
+  validation:
+    publishMode: atomic-full-snapshot
+    onInvalid: retain-last-valid-and-report-errors
+    staleAfterHours: 36
+    staleEffects: [mark-demand-stale, deny-new-decisions, pause-export]
+approvedVacationExport:
+  schedule: daily-at-03:00-Europe-Madrid
+  eligibility:
+    requestStatus: Approved
+    requiredApprovals: [Project-Approved, Department-Approved]
+  payloadFields: [requestId, requestVersion, requesterId, departmentId, projectId, startDate, endDate]
+  forbiddenFields: [reason, accessToken, credentials]
+  idempotencyKey: requestId:requestVersion
+  retry:
+    maximumAttempts: 3
+    afterLimit: NeedsReconciliation
+  transport: in-memory-test-destination-only
+excludedSystems:
+  - real-ServiceNow
+  - real-Active-Directory
+  - my-scaturing

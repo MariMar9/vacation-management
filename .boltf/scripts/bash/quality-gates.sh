@@ -166,7 +166,9 @@ get_stryker_feature_glob() {
 
 # Detect package manager and project type
 detect_project() {
-    if [ -f "package.json" ]; then
+    if [ -f "src/frontend/package.json" ] && [ -f "src/backend/VacationManagement.sln" ]; then
+        echo "monorepo"
+    elif [ -f "package.json" ]; then
         # Check if TypeScript
         if [ -f "tsconfig.json" ]; then
             echo "node-ts"
@@ -193,7 +195,7 @@ detect_project() {
 # Load thresholds from constitution if available
 load_constitution_thresholds() {
     COVERAGE_THRESHOLD=80
-    MUTATION_THRESHOLD=60
+    MUTATION_THRESHOLD=70
 
     local constitution_file
     if [ -f ".boltf/memory/constitution.md" ]; then
@@ -235,6 +237,10 @@ load_constitution_thresholds
 log_section "Type Checking"
 
 case $PROJECT_TYPE in
+    monorepo)
+        run_check "Frontend build/type check" "npm --prefix src/frontend run build" || true
+        run_check ".NET Build" "dotnet build src/backend/VacationManagement.sln --verbosity quiet" || true
+        ;;
     node-ts)
         run_check "TypeScript" "npx tsc --noEmit" || true
         ;;
@@ -276,6 +282,9 @@ esac
 log_section "Linting"
 
 case $PROJECT_TYPE in
+    monorepo)
+        run_check "Angular ESLint" "npm --prefix src/frontend run lint" || true
+        ;;
     node|node-ts)
         if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ] || [ -f "eslint.config.js" ] || [ -f "eslint.config.mjs" ]; then
             if [ "$MODE" = "fix" ]; then
@@ -349,6 +358,9 @@ esac
 log_section "Formatting"
 
 case $PROJECT_TYPE in
+    monorepo)
+        run_check ".NET Format Verify" "dotnet format src/backend/VacationManagement.sln --verify-no-changes --verbosity quiet" || true
+        ;;
     node|node-ts)
         if [ -f ".prettierrc" ] || [ -f ".prettierrc.json" ] || [ -f "prettier.config.js" ] || [ -f "prettier.config.mjs" ]; then
             log_info "Running: Prettier"
@@ -427,6 +439,10 @@ esac
 log_section "Unit Tests"
 
 case $PROJECT_TYPE in
+    monorepo)
+        run_check "Angular Unit Tests" "npm --prefix src/frontend test -- --no-watch --browsers=ChromeHeadless" || true
+        run_check ".NET Tests" "dotnet test src/backend/VacationManagement.sln --no-build --verbosity quiet" || true
+        ;;
     node|node-ts)
         if grep -q "\"test\"" package.json 2>/dev/null; then
             run_check "Jest/Vitest" "npm test -- --passWithNoTests" || true
@@ -472,6 +488,11 @@ log_section "Test Coverage"
 log_info "Coverage threshold: ${COVERAGE_THRESHOLD}%"
 
 case $PROJECT_TYPE in
+    monorepo)
+        run_check "Angular Coverage" "npm --prefix src/frontend test -- --no-watch --browsers=ChromeHeadless --code-coverage" || true
+        run_check ".NET Coverage" "dotnet test src/backend/VacationManagement.sln --collect:\"XPlat Code Coverage\" --verbosity quiet" || true
+        log_info "Coverage thresholds apply to feature logic once implemented; scaffold coverage is not feature coverage."
+        ;;
     node|node-ts)
         # Check if test script exists before running
         if grep -q "\"test\"" package.json 2>/dev/null; then
@@ -532,6 +553,14 @@ log_section "Mutation Testing"
 log_info "Mutation threshold: ${MUTATION_THRESHOLD}%"
 
 case $PROJECT_TYPE in
+    monorepo)
+        if command -v dotnet-stryker &> /dev/null || [ -f "stryker-config.json" ]; then
+            run_check "Stryker.NET" "dotnet stryker --config-file stryker-config.json" || true
+        else
+            log_warning "Stryker.NET not configured"
+            ((WARNINGS++))
+        fi
+        ;;
     node|node-ts)
         if [ -f "stryker.conf.js" ] || [ -f "stryker.conf.json" ] || [ -f "stryker.config.mjs" ]; then
             FEATURE_GLOB=$(get_stryker_feature_glob)
@@ -624,6 +653,11 @@ run_security_analysis() {
 
         # Fallback to basic security checks if Bolt Framework Security Agent not available
         case $PROJECT_TYPE in
+            monorepo)
+                log_info "Running frontend production dependency audit"
+                npm --prefix src/frontend audit --omit=dev --audit-level=high || true
+                run_check ".NET Vulnerability Check" "dotnet list src/backend/VacationManagement.sln package --vulnerable --include-transitive" || true
+                ;;
             node|node-ts)
                 # NPM audit with non-blocking warnings
                 log_info "Running: NPM Audit"

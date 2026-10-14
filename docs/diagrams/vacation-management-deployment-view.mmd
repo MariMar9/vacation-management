@@ -1,0 +1,14 @@
+flowchart LR
+    Users["Department users and approvers"] --> Browser["Browser / web client<br/>Framework undecided"]
+    subgraph ExistingCloud["Existing cloud environment - provider unresolved"]
+        subgraph CandidateApp["Candidate application deployment"]
+            Web["Web experience"] --> Core["Application core<br/>Modular monolith proposal"]
+            Core --> Store[("Application persistence<br/>Technology and ownership to approve")]
+            Job["Scheduled exchange<br/>Boundary and cadence to approve"] --> Adapter["Integration adapters<br/>Contracts to approve"]
+            Core --> Adapter
+        end
+    end
+    Adapter --> SN["ServiceNow"]
+    Adapter --> AD["Active Directory"]
+    Adapter --> Mail["Email"]
+    Adapter -. "Optional / draft" .-> Teams["Microsoft Teams"]

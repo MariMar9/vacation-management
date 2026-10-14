@@ -1,0 +1,25 @@
+scope: integration
+status: completed
+total_articles: 1
+approval:
+  approved_by: MariMar9
+  identity_context: Git/session display identity only; not verified legal identity
+  decided_at: '2026-10-09'
+  evidence: User-authorized test-project approval in this Copilot conversation; not a cryptographic signature
+articles:
+  - number: INT-04-08
+    title: API and external integration boundaries
+    criticality: HIGH
+    status: refined
+    decision: modified
+    content: Existing integration constitution is an unratified template; external ServiceNow and directory contracts remain unspecified.
+    modified_content: |
+      Integration decisions for the Vacation Management test project:
+      - Application-facing API style: synchronous REST with OpenAPI contracts.
+      - No message broker for the initial test scope; no event sourcing.
+      - External system APIs (including ServiceNow and Active Directory) remain simulated until F-005 contracts are separately approved.
+      - Scheduled integration workers may be considered only after the relevant approved contracts define data, identity, cadence, error handling, and ownership.
+      - No external real system owner is appointed by T001/T002.
+      These project-level boundaries do not approve feature-specific payloads, business rules, events, schedules, or integration contracts.
+    reason: REST/OpenAPI supports the selected modular web application while preventing unapproved external dependencies from being treated as executable contracts.
+    decided_at: '2026-10-09'

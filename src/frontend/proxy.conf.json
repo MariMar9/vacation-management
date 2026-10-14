@@ -1,0 +1,10 @@
+{
+  "/api": {
+    "target": "https://localhost:7111",
+    "secure": false
+  },
+  "/test-simulator": {
+    "target": "https://localhost:7111",
+    "secure": false
+  }
+}

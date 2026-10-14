@@ -1,0 +1,203 @@
+openapi: 3.1.0
+info:
+  title: F-002 Approval and Delegation API (test profile)
+  version: 0.1.0
+  description: Test-profile contract; project approval then department approval, with no external provider contract implied.
+servers:
+  - url: /api
+security:
+  /projects/{projectId}/delegations:
+    get:
+      operationId: listProjectDelegations
+      summary: List delegations in an assigned project scope
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Delegations in the authorized project scope
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Delegation' }
+        '401': { description: Authentication required }
+        '403': { description: Actor is not the assigned project approver }
+    post:
+      operationId: grantProjectDelegation
+      summary: Grant a bounded same-project project-approval delegation
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DelegationCommand' }
+      responses:
+        '201':
+          description: Same-project delegation created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Delegation' }
+        '400': { description: Invalid duration or member identifiers }
+        '401': { description: Authentication required }
+        '403': { description: Actor is not the assigned project approver }
+        '409': { description: Delegate is not an active same-project member or grant conflicts }
+        '409': { description: Organization snapshot is stale or assignment is ambiguous }
+  /requests/{requestId}/decisions/project:
+    post:
+      operationId: decideProjectApproval
+      summary: Record an eligible project approval or rejection
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DecisionCommand' }
+      responses:
+        '200':
+          description: Project decision recorded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApprovalDecision' }
+        '400': { description: Invalid decision or reason }
+        '401': { description: Authentication required }
+        '403': { description: Actor lacks project decision authority }
+        '404': { description: Request not found in authorized scope }
+        '409': { description: 'Ineligible, stale, self-approval, duplicate, or concurrent decision' }
+  /requests/{requestId}/decisions/department:
+    post:
+      operationId: decideDepartmentApproval
+      summary: Record the department approval after project approval
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DepartmentApprovalCommand' }
+      responses:
+        '200':
+          description: Department decision recorded; approval here makes request finally Approved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApprovalDecision' }
+        '400': { description: Invalid decision or reason }
+        '401': { description: Authentication required }
+        '403': { description: Actor lacks department decision authority }
+        '404': { description: Request not found in authorized scope }
+        '409': { description: 'Project approval missing, request stale, self-approval, duplicate, or concurrent decision' }
+  /projects/{projectId}/delegations:
+    post:
+      operationId: grantProjectDelegation
+      summary: Grant a bounded same-project project-approval delegation
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DelegationCommand' }
+      responses:
+        '201':
+          description: Same-project delegation created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Delegation' }
+        '400': { description: Invalid duration or member identifiers }
+        '401': { description: Authentication required }
+        '403': { description: Actor is not the assigned project approver }
+        '409': { description: Delegate is not an active same-project member or grant conflicts }
+  /delegations/{delegationId}:
+    delete:
+      operationId: revokeProjectDelegation
+      summary: Revoke a project delegation created by the current delegator
+      parameters:
+        - in: path
+          name: delegationId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: Delegation revoked }
+        '401': { description: Authentication required }
+        '403': { description: Only the delegator may revoke }
+        '404': { description: Delegation not found }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    RequestId:
+      in: path
+      name: requestId
+      required: true
+      schema: { type: string, format: uuid }
+  schemas:
+    DecisionCommand:
+      type: object
+      additionalProperties: false
+      required: [outcome]
+      properties:
+        outcome: { type: string, enum: [Approved, Rejected] }
+        reason: { type: [string, 'null'], minLength: 1, maxLength: 500, description: Required for Rejected; optional for Approved. }
+        expectedRequestVersion: { type: integer, minimum: 1 }
+    DepartmentApprovalCommand:
+      type: object
+      additionalProperties: false
+      required: [outcome, expectedRequestVersion]
+      properties:
+        outcome: { type: string, enum: [Approved, Rejected] }
+        expectedRequestVersion: { type: integer, minimum: 1 }
+        reason: { type: [string, 'null'], minLength: 1, maxLength: 500, description: Required for Rejected; optional for Approved. }
+    ApprovalDecision:
+      type: object
+      required: [id, requestId, level, outcome, actorId, decidedAt, requestVersion]
+      properties:
+        id: { type: string, format: uuid }
+        requestId: { type: string, format: uuid }
+        level: { type: string, enum: [Project, Department] }
+        outcome: { type: string, enum: [Approved, Rejected] }
+        actorId: { type: string, pattern: '^EMP-TEST-[A-Z0-9-]+$' }
+        delegationId: { type: [string, 'null'], format: uuid }
+        reason: { type: [string, 'null'], maxLength: 500 }
+        decidedAt: { type: string, format: date-time }
+        requestVersion: { type: integer, minimum: 1 }
+    ReviewRequest:
+      type: object
+      required: [requestId, projectId, requesterId, startDate, endDate, requestStatus, approvalLevel, version]
+      properties:
+        requestId: { type: string, format: uuid }
+        projectId: { type: string }
+        requesterId: { type: string }
+        startDate: { type: string, format: date }
+        endDate: { type: string, format: date }
+        requestStatus: { type: string }
+        approvalLevel: { type: string, enum: [Project, Department] }
+        version: { type: integer, minimum: 1 }
+    DelegationCommand:
+      type: object
+      additionalProperties: false
+      required: [delegateId, durationDays]
+      properties:
+        delegateId: { type: string, pattern: '^EMP-TEST-[A-Z0-9-]+$' }
+        durationDays: { type: integer, minimum: 1, maximum: 30 }
+    Delegation:
+      type: object
+      required: [id, projectId, delegatorId, delegateId, startsAt, expiresAt, status]
+      properties:
+        id: { type: string, format: uuid }
+        projectId: { type: string }
+        delegatorId: { type: string }
+        delegateId: { type: string }
+        startsAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        revokedAt: { type: [string, 'null'], format: date-time }
+        status: { type: string, enum: [Active, Expired, Revoked] }

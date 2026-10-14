@@ -1,0 +1,136 @@
+openapi: 3.1.0
+info:
+  title: F-005 Organization and Export Simulator API
+  version: 0.1.0
+  description: Local test simulator contract only. It does not describe or invoke ServiceNow or Active Directory provider APIs.
+servers:
+  - url: /test-simulator
+security:
+  - bearerAuth: []
+paths:
+  /organization/snapshots:
+    post:
+      operationId: submitSyntheticOrganizationSnapshot
+      summary: Validate and atomically publish a synthetic organization snapshot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OrganizationSnapshot' }
+      responses:
+        '202': { description: Snapshot accepted and atomically published }
+        '400': { description: 'Snapshot has duplicate IDs, invalid references, or invalid assignments' }
+        '409': { description: Snapshot version is not newer than the current version }
+  /organization/snapshots/current:
+    get:
+      operationId: getCurrentSyntheticOrganizationSnapshot
+      summary: Read the last valid synthetic organization snapshot and its freshness
+      responses:
+        '200':
+          description: Current last-valid snapshot and freshness status
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SnapshotStatus' }
+        '404': { description: No valid snapshot exists }
+        '401': { description: Authentication required }
+        '403': { description: Test operator role required }
+  /vacation-exports:
+    get:
+      operationId: listSyntheticVacationExports
+      summary: Inspect the local export outbox without sending externally
+      responses:
+        '200':
+          description: Synthetic export records
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ExportRecord' }
+        '401': { description: Authentication required }
+        '403': { description: Test operator role required }
+  /vacation-exports/evaluate:
+    post:
+      operationId: evaluateSyntheticVacationExports
+      summary: Process pending exports in the local simulator
+      description: Simulates a provider result; it never calls an external service.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [simulateFailure]
+              properties:
+                simulateFailure: { type: boolean, description: Simulated failures retry up to three attempts, then move to NeedsReconciliation. }
+      responses:
+        '202': { description: Pending outbox records processed in the local simulator }
+        '401': { description: Authentication required }
+        '403': { description: Test operator role required }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    OrganizationSnapshot:
+      type: object
+      additionalProperties: false
+      required: [snapshotVersion, generatedAt, department, employees, projects, memberships, approverAssignments]
+      properties:
+        snapshotVersion: { type: string }
+        generatedAt: { type: string, format: date-time }
+        department: { $ref: '#/components/schemas/Department' }
+        employees: { type: array, items: { $ref: '#/components/schemas/Employee' } }
+        projects: { type: array, items: { $ref: '#/components/schemas/Project' } }
+        memberships: { type: array, items: { $ref: '#/components/schemas/Membership' } }
+        approverAssignments: { type: array, items: { $ref: '#/components/schemas/ApproverAssignment' } }
+    Department:
+      type: object
+      required: [departmentId, name]
+      properties:
+        departmentId: { type: string, const: DEPT-TEST-001 }
+        name: { type: string }
+    Employee:
+      type: object
+      required: [employeeId, active]
+      properties:
+        employeeId: { type: string, pattern: '^EMP-TEST-[A-Z0-9-]+$' }
+        active: { type: boolean }
+    Project:
+      type: object
+      required: [projectId, departmentId]
+      properties:
+        projectId: { type: string, pattern: '^PRJ-TEST-[A-Z0-9-]+$' }
+        departmentId: { type: string, const: DEPT-TEST-001 }
+    Membership:
+      type: object
+      required: [employeeId, projectId]
+      properties:
+        employeeId: { type: string }
+        projectId: { type: string }
+    ApproverAssignment:
+      type: object
+      required: [scopeType, scopeId, approverId, role]
+      properties:
+        scopeType: { type: string, enum: [Project, Department] }
+        scopeId: { type: string }
+        approverId: { type: string }
+        role: { type: string, enum: [ProjectApprover, DepartmentApprover] }
+    SnapshotStatus:
+      type: object
+      required: [snapshotVersion, generatedAt, stale]
+      properties:
+        snapshotVersion: { type: string }
+        generatedAt: { type: string, format: date-time }
+        stale: { type: boolean }
+        validationErrors: { type: array, items: { type: string } }
+    ExportRecord:
+      type: object
+      required: [requestId, requestVersion, idempotencyKey, status, attemptCount, createdAt, lastAttemptAt]
+      properties:
+        requestId: { type: string, format: uuid }
+        requestVersion: { type: integer }
+        idempotencyKey: { type: string }
+        status: { type: string, enum: [Pending, Delivered, NeedsReconciliation] }
+        attemptCount: { type: integer, minimum: 0, maximum: 3 }
+        createdAt: { type: string, format: date-time }
+        lastAttemptAt: { type: [string, 'null'], format: date-time }

@@ -1,0 +1,30 @@
+stateDiagram-v2
+    [*] --> Eligible: F-002 decision boundary; request eligibility is defined outside F-002
+    Eligible --> ProjectApproved: Record approval [authorized project approver]
+    Eligible --> DepartmentApproved: Record approval [authorized department approver]
+    Eligible --> Rejected: Record rejection [authorized project approver]
+
+    state "Eligible for decision at this level" as Eligible
+    state "Project-level approval recorded" as ProjectApproved
+    state "Department-level approval recorded" as DepartmentApproved
+    state "Rejected outcome recorded" as Rejected
+
+    note right of Eligible
+        Entry condition from UC-002.
+        Not a newly defined request state.
+    end note
+
+    note right of ProjectApproved
+        Recorded outcome is supported.
+        Overall finality is unresolved.
+    end note
+
+    note right of DepartmentApproved
+        Recorded outcome is supported.
+        Requirement and order are unresolved.
+    end note
+
+    note right of Rejected
+        Rejected outcome is supported.
+        Follow-up and terminality are unresolved.
+    end note

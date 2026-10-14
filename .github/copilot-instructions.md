@@ -34,9 +34,14 @@ answers your need:
 Tier 0/1 are generated from `merged-refinement.yaml` by `skill-bolt-setup-constitution` (Phase 5).
 
 <!-- BOLT:SCOPE-CARD (generated from merged-refinement.yaml — do not edit by hand) -->
-> *Scope card and `constitution.digest.md` are generated during constitution setup
-> (`skill-bolt-setup-constitution` Phase 5). Until then (fresh/template project), read the full
-> `.boltf/memory/constitution.md`.*
+
+**Active scopes:** backend, frontend, cloud-platform, integration
+
+- **backend:** ASP.NET Core .NET 8 Controllers, modular monolith, Azure SQL/EF Core, native simple CQRS
+- **frontend:** Angular 20 SPA; Entra ID OIDC direction, with feature access policy still open
+- **cloud-platform:** Azure test target, Container Apps, Terraform, GitHub Actions, OTel to Azure
+- **integration:** REST/OpenAPI; external systems simulated pending approved F-005 contracts
+**Naming/format:** `feature/<feature-name>`; `bolt/<feature-name>-bolt-<N>-<slug>`. Test-project decisions only; feature readiness remains blocked.
 <!-- /BOLT:SCOPE-CARD -->
 
 ### Features (`specs/XXX-feature-name/`)
@@ -107,19 +112,19 @@ project/
 
 Bolt Framework includes 32 specialized AI agents. Invoke them with `@AgentName`:
 
-| Topic           | Agent                 |
-| --------------- | --------------------- |
-| Orchestration   | `@Bolt Framework`     |
-| Legacy analysis | `@Bolt Legacy Analyst`|
-| Architecture    | `@Bolt Architect`     |
-| Domain modeling | `@Bolt DDD`           |
-| Design tooling  | `@Bolt Penpot`        |
-| Testing         | `@Bolt Testing`       |
-| Implementation  | `@Bolt Implement`     |
-| Documentation   | `@Bolt Documentation` |
-| Operations      | `@Bolt Ops`           |
-| Releases        | `@Bolt Release`       |
-| Research        | `@Bolt Researcher`    |
+| Topic           | Agent                  |
+| --------------- | ---------------------- |
+| Orchestration   | `@Bolt Framework`      |
+| Legacy analysis | `@Bolt Legacy Analyst` |
+| Architecture    | `@Bolt Architect`      |
+| Domain modeling | `@Bolt DDD`            |
+| Design tooling  | `@Bolt Penpot`         |
+| Testing         | `@Bolt Testing`        |
+| Implementation  | `@Bolt Implement`      |
+| Documentation   | `@Bolt Documentation`  |
+| Operations      | `@Bolt Ops`            |
+| Releases        | `@Bolt Release`        |
+| Research        | `@Bolt Researcher`     |
 
 📚 **Full list**: [.github/agents/README.md](.github/agents/README.md)
 
@@ -129,21 +134,21 @@ Bolt Framework includes specialized **skills** (single source for both clients) 
 
 ### Available Skills
 
-| Skill                                                      | Domain                        | Use When                                                                                         |
-| ---------------------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------ |
-| [bolt-framework](../.claude/skills/bolt-framework/)           | Bolt Framework Methodology    | Working on Bolt Framework projects, managing lifecycle                                           |
-| [bolt-adr](../.claude/skills/bolt-adr/)                       | Architecture Decision Records | Documenting architectural decisions, technology selections, or design patterns using MADR format |
-| [skill-creator](../.claude/skills/skill-creator/)             | Skill Creation                | Creating or improving Agent Skills                                                               |
-| [markdown-formatting](../.claude/skills/markdown-formatting/) | Markdown Best Practices       | Writing or editing any Markdown document (.md, .agent.md, .prompt.md)                            |
-| [interface-design](../.claude/skills/interface-design/)       | Interface Design              | Building dashboards, admin panels, SaaS apps, tools, settings pages, and data interfaces         |
-| [mermaid-creator](../.claude/skills/mermaid-creator/)         | Mermaid Diagrams              | Creating any diagram — flowchart, sequence, class, state, ER, C4, and more                       |
-| [mermaid-diagrams](../.claude/skills/mermaid-diagrams/)       | Mermaid Diagrams (alt)        | Alternative Mermaid reference with class, sequence, flowchart, ERD, and C4 examples              |
-| [tailwind-design-system](../.claude/skills/tailwind-design-system/) | Tailwind Design System  | Building scalable design systems with Tailwind CSS v4, design tokens, component libraries        |
-| [skill-tdd-red-green-refactor](../.claude/skills/skill-tdd-red-green-refactor/) | TDD Discipline | Driving development through the Red-Green-Refactor cycle |
-| [skill-playwright-e2e](../.claude/skills/skill-playwright-e2e/) | Playwright E2E | Browser automation, Page Object Model, E2E fixtures |
-| [bolt-ui-mockups](../.claude/skills/bolt-ui-mockups/)         | UI Mockups (low-fi)           | Generating/refining static low-fi HTML mockups in DISCOVERY before planning                       |
-| [bolt-legacy-analyst](../.claude/skills/bolt-legacy-analyst/) | Legacy Discovery (brownfield) | Reading legacy code: assess, map (call graph/data lineage), extract business rules (G/W/T) |
-| [skill-characterization-testing](../.claude/skills/skill-characterization-testing/) | Equivalence Testing | Pinning legacy behavior (golden master / parity) to prove the modernized code is equivalent |
+| Skill                                                                               | Domain                        | Use When                                                                                         |
+| ----------------------------------------------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------ |
+| [bolt-framework](../.claude/skills/bolt-framework/)                                 | Bolt Framework Methodology    | Working on Bolt Framework projects, managing lifecycle                                           |
+| [bolt-adr](../.claude/skills/bolt-adr/)                                             | Architecture Decision Records | Documenting architectural decisions, technology selections, or design patterns using MADR format |
+| [skill-creator](../.claude/skills/skill-creator/)                                   | Skill Creation                | Creating or improving Agent Skills                                                               |
+| [markdown-formatting](../.claude/skills/markdown-formatting/)                       | Markdown Best Practices       | Writing or editing any Markdown document (.md, .agent.md, .prompt.md)                            |
+| [interface-design](../.claude/skills/interface-design/)                             | Interface Design              | Building dashboards, admin panels, SaaS apps, tools, settings pages, and data interfaces         |
+| [mermaid-creator](../.claude/skills/mermaid-creator/)                               | Mermaid Diagrams              | Creating any diagram — flowchart, sequence, class, state, ER, C4, and more                       |
+| [mermaid-diagrams](../.claude/skills/mermaid-diagrams/)                             | Mermaid Diagrams (alt)        | Alternative Mermaid reference with class, sequence, flowchart, ERD, and C4 examples              |
+| [tailwind-design-system](../.claude/skills/tailwind-design-system/)                 | Tailwind Design System        | Building scalable design systems with Tailwind CSS v4, design tokens, component libraries        |
+| [skill-tdd-red-green-refactor](../.claude/skills/skill-tdd-red-green-refactor/)     | TDD Discipline                | Driving development through the Red-Green-Refactor cycle                                         |
+| [skill-playwright-e2e](../.claude/skills/skill-playwright-e2e/)                     | Playwright E2E                | Browser automation, Page Object Model, E2E fixtures                                              |
+| [bolt-ui-mockups](../.claude/skills/bolt-ui-mockups/)                               | UI Mockups (low-fi)           | Generating/refining static low-fi HTML mockups in DISCOVERY before planning                      |
+| [bolt-legacy-analyst](../.claude/skills/bolt-legacy-analyst/)                       | Legacy Discovery (brownfield) | Reading legacy code: assess, map (call graph/data lineage), extract business rules (G/W/T)       |
+| [skill-characterization-testing](../.claude/skills/skill-characterization-testing/) | Equivalence Testing           | Pinning legacy behavior (golden master / parity) to prove the modernized code is equivalent      |
 
 ### Creating Custom Skills
 
@@ -211,4 +216,4 @@ update the corresponding GitHub issue:
 
 ---
 
-*Bolt Framework v2.0.0*
+_Bolt Framework v2.0.0_

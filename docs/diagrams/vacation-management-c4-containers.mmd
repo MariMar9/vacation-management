@@ -1,0 +1,24 @@
+C4Container
+    title Vacation Management - Logical Containers (Proposed)
+    Person(employee, "Employee / Requester", "Uses own request capabilities")
+    Person(approver, "Project or Department Approver", "Reviews and decides within approved scope")
+    System_Boundary(vacation, "Vacation Management - Proposed Boundary") {
+        Container(web, "Web Experience", "Technology undecided; Vue is a source proposal", "Requester, approver, and demand views")
+        Container(core, "Application Core", "Modular monolith is a source proposal", "Request, approval, delegation, demand, and authorization responsibilities")
+        ContainerDb(store, "Application Persistence", "Technology undecided", "Candidate store for application-owned workflow records")
+        Container(exchange, "Scheduled Exchange", "Technology and deployment boundary undecided", "Nightly source updates; outbound export cadence unresolved")
+        Container(adapters, "Integration Adapters", "Protocols and contracts undecided", "ServiceNow, Active Directory, and notification boundaries")
+    }
+    Container_Ext(serviceNow, "ServiceNow", "External system", "Department membership source and vacation export destination")
+    Container_Ext(activeDirectory, "Active Directory", "External directory", "Organizational and project responsibility data")
+    Container_Ext(email, "Email", "External channel", "Agreed notifications; event rules open")
+
+    Rel(employee, web, "Uses")
+    Rel(approver, web, "Uses")
+    Rel(web, core, "Invokes application capabilities; protocol undecided")
+    Rel(core, store, "Reads and records workflow data; persistence choice undecided")
+    Rel(exchange, adapters, "Coordinates approved scheduled exchanges")
+    Rel(core, adapters, "Requests approved integration actions")
+    Rel(adapters, serviceNow, "Reads membership and may send eligible approved records")
+    Rel(adapters, activeDirectory, "Reads approved organizational and approver data")
+    Rel(adapters, email, "Sends approved notification events")

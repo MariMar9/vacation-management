@@ -1,0 +1,92 @@
+project: Vacation Management test project
+status: completed
+effective_date: '2026-10-09'
+approval:
+  decision_owner: MariMar9
+  identity_context: Git/session display identity only; not verified legal identity
+  evidence: User-authorized approval in this Copilot conversation; not a cryptographic signature
+  scope: T001/T002 global governance and technical decisions for this test project only
+  baseline_disposition: RFP and Requirements Baseline accepted only as test/discovery references; unresolved feature policies remain conditional
+  external_owners: None appointed; external APIs remain simulated pending separately approved F-005 contracts
+scopes:
+  - scope: backend
+    status: completed
+    articles:
+      - number: B-02-03-05-13
+        title: Backend runtime, architecture, persistence, and quality
+        criticality: HIGH
+        decision: modified
+        modified_content: |
+          Backend decisions for the Vacation Management test project:
+          - Runtime: C# / ASP.NET Core Web API on .NET 8.
+          - API implementation: Controllers (MVC); REST endpoints documented with OpenAPI.
+          - Application architecture: modular monolith.
+          - Persistence: Azure SQL with Entity Framework Core.
+          - Application pattern: simple CQRS using native interfaces; do not add MediatR.
+          - Event sourcing: not used.
+          - Initial message broker: none. Consider scheduled integration workers only after the relevant contracts are approved; simulate external APIs until then.
+          - Quality gates: lint/format errors 0; all tests pass; line coverage >= 80%; branch coverage >= 75%; mutation score >= 70% using Coverlet and Stryker.NET where executable projects exist.
+          - Candidate checks: dotnet format --verify-no-changes, dotnet test with Coverlet collection, and dotnet stryker. Actual solution/project paths and commands remain pending because executable project manifests and tests do not exist.
+          These are test-project technical decisions only. Feature-specific data fields, lifecycle behavior, authorization rules, and API contracts remain unapproved.
+        reason: User delegated T001/T002 test-project technical choices; native CQRS avoids an extra dependency and a modular monolith fits the single application test scope.
+        decided_at: '2026-10-09'
+  - scope: frontend
+    status: completed
+    articles:
+      - number: FE-02-07-13
+        title: Frontend framework, identity flow, and quality
+        criticality: HIGH
+        decision: modified
+        modified_content: |
+          Frontend decisions for the Vacation Management test project:
+          - Framework: Angular 20, as a single-page application.
+          - Authentication direction: Microsoft Entra ID using OIDC; detailed population, roles, permissions, and feature access rules remain open under F-006.
+          - No mobile application is in this test-project scope.
+          - Frontend checks: Angular lint and test commands where project manifests exist; at least one executable Playwright smoke test must pass using npx playwright test --grep @smoke.
+          - Global quality gates: lint errors 0, test pass rate 100%, line coverage >= 80%, branch coverage >= 75%, and mutation score >= 70% where tooling applies.
+          The framework decision does not approve feature requirements, screen behavior, or user journeys.
+        reason: Angular is the existing wizard choice and user-authorized test stack; identity protocol direction does not decide feature authorization policy.
+        decided_at: '2026-10-09'
+  - scope: cloud-platform
+    status: completed
+    articles:
+      - number: CP-08-10-11-12-13-16-19
+        title: Test environment, delivery, security, and quality controls
+        criticality: HIGH
+        decision: modified
+        modified_content: |
+          Cloud and delivery decisions for the Vacation Management test project:
+          - Cloud provider and runtime target: Microsoft Azure test environment using Azure Container Apps and Azure SQL. These are target decisions, not evidence that resources exist or authorization to deploy production.
+          - Infrastructure as code and local orchestration: Terraform and Podman. Work-management tracking remains GitHub Projects.
+          - CI/CD: GitHub Actions with Terraform. Deploy to dev on merge. UAT and Prod stages require manual environment approval; neither is auto-deployed. UAT/Prod are reserved stages only and are not authorized for real deployment.
+          - Deployment strategy: rolling.
+          - Branch policy: GitHub Flow with feature/<feature-name> parent; Bolt branches are distinct refs named bolt/<feature-name>-bolt-<N>-<slug>. Do not create feature/<feature-name>/bolt-<N>, because Git cannot hold that parent ref and child ref simultaneously.
+          - Observability: OpenTelemetry to Azure Monitor for the test environment.
+          - Identity: Microsoft Entra ID OIDC for users; managed identity for application-to-Azure access; GitHub Actions OIDC federation for CI. Use Azure Key Vault for hosted secrets and .NET User Secrets locally. Never put credentials in source.
+          - Security: synthetic data only; TLS in transit; Azure-managed encryption keys at rest; least privilege; VNet and private endpoints as test-environment targets; WAF disabled for this test environment.
+          - Compliance: not determined and not applicable to this synthetic-data-only test scope. Do not claim GDPR/HIPAA applicability, certification, or regulatory compliance.
+          - Quality: lint errors 0, tests 100% passing, line coverage >= 80%, branch coverage >= 75%, mutation >= 70%; frontend additionally requires >= 1 executable Playwright smoke test. Use dotnet format/test/Coverlet/Stryker.NET and Angular lint/test/Playwright where projects exist. No runtime quality gate is evidenced as executed while manifests and tests are absent.
+        reason: User resolved wizard conflicts for this test scope and required manual UAT/Prod approvals, 70% mutation, non-conflicting branches, synthetic data, and no unsupported compliance claims.
+        decided_at: '2026-10-09'
+  - scope: integration
+    status: completed
+    articles:
+      - number: INT-04-08
+        title: API and external integration boundaries
+        criticality: HIGH
+        decision: modified
+        modified_content: |
+          Integration decisions for the Vacation Management test project:
+          - Application-facing API style: synchronous REST with OpenAPI contracts.
+          - No message broker for the initial test scope; no event sourcing.
+          - External system APIs (including ServiceNow and Active Directory) remain simulated until F-005 contracts are separately approved.
+          - Scheduled integration workers may be considered only after approved contracts define data, identity, cadence, error handling, and ownership.
+          - No external real system owner is appointed by T001/T002.
+          These project-level boundaries do not approve feature-specific payloads, business rules, events, schedules, or integration contracts.
+        reason: REST/OpenAPI supports the selected modular web application while preventing unapproved external dependencies from being treated as executable contracts.
+        decided_at: '2026-10-09'
+total_scopes: 4
+total_articles: 4
+total_decisions: 4
+merge_timestamp: '2026-10-09'
+conflicts: []

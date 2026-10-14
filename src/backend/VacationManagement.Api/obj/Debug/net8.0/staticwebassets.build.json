@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "PwuBLLzv24B26enhYH5aD6dxDvVA5Kyn9zOTmY2cBKk=",
+  "Source": "VacationManagement.Api",
+  "BasePath": "_content/VacationManagement.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}

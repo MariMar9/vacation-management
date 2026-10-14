@@ -144,6 +144,7 @@ function Get-StrykerFeatureGlob {
 
 # Detect project type
 function Get-ProjectType {
+    if ((Test-Path "src/frontend/package.json") -and (Test-Path "src/backend/VacationManagement.sln")) { return "monorepo" }
     if (Test-Path "package.json") {
         if (Test-Path "tsconfig.json") { return "node-ts" }
         return "node"
@@ -160,7 +161,7 @@ function Get-ProjectType {
 # Load thresholds from constitution
 function Get-ConstitutionThresholds {
     $Script:CoverageThreshold = 80
-    $Script:MutationThreshold = 60
+    $Script:MutationThreshold = 70
 
     if (Test-Path ".boltf/memory/constitution.md") {
         Write-Info "Loading thresholds from constitution..."
@@ -187,6 +188,10 @@ Get-ConstitutionThresholds
 Write-Section "Type Checking"
 
 switch ($ProjectType) {
+    "monorepo" {
+        Invoke-Check "Frontend build/type check" { npm --prefix src/frontend run build }
+        Invoke-Check ".NET Build" { dotnet build src/backend/VacationManagement.sln --verbosity quiet }
+    }
     "node-ts" {
         Invoke-Check "TypeScript" { npx tsc --noEmit }
     }
@@ -226,6 +231,9 @@ switch ($ProjectType) {
 Write-Section "Linting"
 
 switch ($ProjectType) {
+    "monorepo" {
+        Invoke-Check "Angular ESLint" { npm --prefix src/frontend run lint }
+    }
     { $_ -in "node", "node-ts" } {
         if ((Test-Path ".eslintrc.js") -or (Test-Path ".eslintrc.json") -or (Test-Path "eslint.config.js") -or (Test-Path "eslint.config.mjs")) {
             if ($Fix) {
@@ -297,6 +305,9 @@ switch ($ProjectType) {
 Write-Section "Formatting"
 
 switch ($ProjectType) {
+    "monorepo" {
+        Invoke-Check ".NET Format Verify" { dotnet format src/backend/VacationManagement.sln --verify-no-changes --verbosity quiet }
+    }
     { $_ -in "node", "node-ts" } {
         if ((Test-Path ".prettierrc") -or (Test-Path ".prettierrc.json") -or (Test-Path "prettier.config.js") -or (Test-Path "prettier.config.mjs")) {
             if ($Fix) {
@@ -378,6 +389,10 @@ switch ($ProjectType) {
 Write-Section "Unit Tests"
 
 switch ($ProjectType) {
+    "monorepo" {
+        Invoke-Check "Angular Unit Tests" { npm --prefix src/frontend test -- --no-watch --browsers=ChromeHeadless }
+        Invoke-Check ".NET Tests" { dotnet test src/backend/VacationManagement.sln --no-build --verbosity quiet }
+    }
     { $_ -in "node", "node-ts" } {
         $packageJson = Get-Content "package.json" -Raw | ConvertFrom-Json
         if ($packageJson.scripts.test) {
@@ -422,6 +437,11 @@ Write-Section "Test Coverage"
 Write-Info "Coverage threshold: $($Script:CoverageThreshold)%"
 
 switch ($ProjectType) {
+    "monorepo" {
+        Invoke-Check "Angular Coverage" { npm --prefix src/frontend test -- --no-watch --browsers=ChromeHeadless --code-coverage }
+        Invoke-Check ".NET Coverage" { dotnet test src/backend/VacationManagement.sln --collect:"XPlat Code Coverage" --verbosity quiet }
+        Write-Info "Coverage thresholds apply to feature logic once implemented; scaffold coverage is not feature coverage."
+    }
     { $_ -in "node", "node-ts" } {
         Invoke-Check "Coverage" { npm test -- --coverage --passWithNoTests }
     }
@@ -474,6 +494,13 @@ Write-Section "Mutation Testing"
 Write-Info "Mutation threshold: $($Script:MutationThreshold)%"
 
 switch ($ProjectType) {
+    "monorepo" {
+        if ((Get-Command dotnet-stryker -ErrorAction SilentlyContinue) -or (Test-Path "stryker-config.json")) {
+            Invoke-Check "Stryker.NET" { dotnet stryker --config-file stryker-config.json }
+        } else {
+            Write-Warning "Stryker.NET not configured"
+        }
+    }
     { $_ -in "node", "node-ts" } {
         if ((Test-Path "stryker.conf.js") -or (Test-Path "stryker.conf.json") -or (Test-Path "stryker.config.mjs")) {
             $featureGlob = Get-StrykerFeatureGlob
@@ -549,6 +576,11 @@ if ($Full) {
     Write-Section "Security Scan"
 
     switch ($ProjectType) {
+        "monorepo" {
+            Write-Info "Running frontend production dependency audit"
+            npm --prefix src/frontend audit --omit=dev --audit-level=high
+            Invoke-Check ".NET Vulnerability Check" { dotnet list src/backend/VacationManagement.sln package --vulnerable --include-transitive }
+        }
         { $_ -in "node", "node-ts" } {
             Invoke-Check "NPM Audit" { npm audit --audit-level=high }
         }
