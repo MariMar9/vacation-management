@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>F-001 - My requests - List - Loading</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+  <body class="antialiased min-h-screen bg-zinc-50 text-zinc-900">
+    <header
+      class="border-b border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
+    >
+      <strong>Mockup - </strong
+      ><span
+        >Feature: <code>001-vacation-request-lifecycle</code> - Flow:
+        <code>my-requests</code> - Step: <code>list</code> - State:
+        <code>loading</code> - Optimised for: mobile / tablet / desktop.</span
+      >
+    </header>
+    <div class="mx-auto flex min-h-screen max-w-7xl flex-col md:flex-row">
+      <nav
+        aria-label="Requester navigation"
+        class="border-b border-zinc-300 bg-white p-4 md:w-56 md:border-b-0 md:border-r"
+      >
+        <p class="mb-3 text-xs font-semibold uppercase text-zinc-500">
+          Vacation management
+        </p>
+        <a
+          aria-current="page"
+          class="block border border-zinc-400 bg-zinc-100 px-3 py-2 text-sm font-medium"
+          href="#"
+          >My requests</a
+        >
+      </nav>
+      <main
+        class="min-w-0 flex-1 p-4 md:p-8"
+        aria-live="polite"
+        aria-busy="true"
+      >
+        <p class="text-sm text-zinc-500">Requester view</p>
+        <h1 class="mb-6 text-2xl font-semibold">My vacation requests</h1>
+        <h2 class="mb-3 text-lg font-semibold">Loading request outcomes</h2>
+        <div class="space-y-3" aria-label="Loading request list">
+          <div class="h-12 border border-zinc-300 bg-zinc-200"></div>
+          <div class="h-12 border border-zinc-300 bg-zinc-200"></div>
+          <div class="h-12 border border-zinc-300 bg-zinc-200"></div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

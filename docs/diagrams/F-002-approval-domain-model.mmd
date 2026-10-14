@@ -1,0 +1,47 @@
+classDiagram
+    direction LR
+
+    class ApprovalDecision {
+        <<AggregateRootCandidate>>
+        ApprovalLevel level
+        DecisionOutcome outcome
+    }
+
+    class ApprovalDelegation {
+        <<AggregateRootCandidate>>
+    }
+
+    class ApprovalLevel {
+        <<ValueObjectCandidate>>
+        Project
+        Department
+    }
+
+    class DecisionOutcome {
+        <<ValueObjectCandidate>>
+        Approved
+        Rejected
+    }
+
+    class ApprovalOutcomeRecorded {
+        <<DomainEventCandidate>>
+    }
+
+    class ApprovalDelegationGranted {
+        <<DomainEventCandidate>>
+    }
+
+    class VacationRequestF001 {
+        <<ExternalAggregate>>
+    }
+
+    class ProjectMembershipF005 {
+        <<ExternalData>>
+    }
+
+    ApprovalDecision --> ApprovalLevel : records at
+    ApprovalDecision --> DecisionOutcome : records
+    ApprovalDecision --> VacationRequestF001 : references request
+    ApprovalDelegation --> ProjectMembershipF005 : validates same-project condition
+    ApprovalDecision ..> ApprovalOutcomeRecorded : candidate event
+    ApprovalDelegation ..> ApprovalDelegationGranted : candidate event

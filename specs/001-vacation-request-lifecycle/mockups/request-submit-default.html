@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>F-001 - Submit request - Default</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+  <body class="antialiased min-h-screen bg-zinc-50 text-zinc-900">
+    <header
+      class="border-b border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
+    >
+      <strong>Mockup · </strong
+      ><span
+        >Feature: <code>F-001</code> · Flow: <code>request-submit</code> · Step:
+        <code>form</code> · State: <code>default</code> · Optimised for: mobile
+        / tablet / desktop. Assumes pre-provisioned synthetic requester and
+        project membership.</span
+      >
+    </header>
+    <main class="mx-auto max-w-5xl p-6">
+      <p class="mb-2 text-xs font-semibold uppercase text-zinc-500">
+        Vacation Management · Test workspace
+      </p>
+      <h1 class="mb-2 text-2xl font-semibold">New vacation request</h1>
+      <p class="mb-8 text-sm text-zinc-600">
+        Dates are inclusive calendar days. No half-day or holiday calculation.
+      </p>
+      <form class="max-w-2xl space-y-6 border-y border-zinc-300 py-6">
+        <div>
+          <label class="mb-2 block text-sm font-medium" for="project"
+            >Project</label
+          >
+          <select
+            id="project"
+            class="w-full border border-zinc-400 bg-white p-3"
+          >
+            <option>PRJ-TEST-ALPHA</option>
+          </select>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label class="mb-2 block text-sm font-medium" for="start"
+              >Start date</label
+            >
+            <input
+              id="start"
+              type="date"
+              class="w-full border border-zinc-400 bg-white p-3"
+            />
+          </div>
+          <div>
+            <label class="mb-2 block text-sm font-medium" for="end"
+              >End date</label
+            >
+            <input
+              id="end"
+              type="date"
+              class="w-full border border-zinc-400 bg-white p-3"
+            />
+          </div>
+        </div>
+        <div>
+          <label class="mb-2 block text-sm font-medium" for="reason"
+            >Reason
+            <span class="font-normal text-zinc-500"
+              >(optional, 500 characters max)</span
+            ></label
+          >
+          <textarea
+            id="reason"
+            maxlength="500"
+            rows="3"
+            class="w-full border border-zinc-400 bg-white p-3"
+          ></textarea>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <button
+            type="button"
+            class="border border-zinc-500 bg-zinc-900 px-4 py-2 text-sm text-white"
+          >
+            Submit request
+          </button>
+          <button
+            type="button"
+            class="border border-zinc-400 px-4 py-2 text-sm"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,29 @@
+scope: backend
+status: completed
+total_articles: 1
+approval:
+  approved_by: MariMar9
+  identity_context: Git/session display identity only; not verified legal identity
+  decided_at: '2026-10-09'
+  evidence: User-authorized test-project approval in this Copilot conversation; not a cryptographic signature
+articles:
+  - number: B-02-03-05-13
+    title: Backend runtime, architecture, persistence, and quality
+    criticality: HIGH
+    status: refined
+    decision: modified
+    content: Existing backend constitution is an unratified template; wizard prefill selects .NET 8.
+    modified_content: |
+      Backend decisions for the Vacation Management test project:
+      - Runtime: C# / ASP.NET Core Web API on .NET 8.
+      - API implementation: Controllers (MVC); REST endpoints documented with OpenAPI.
+      - Application architecture: modular monolith.
+      - Persistence: Azure SQL with Entity Framework Core.
+      - Application pattern: simple CQRS using native interfaces; do not add MediatR.
+      - Event sourcing: not used.
+      - Initial message broker: none. Consider scheduled integration workers only after the relevant contracts are approved; simulate external APIs until then.
+      - Quality gates: lint/format errors 0; all tests pass; line coverage >= 80%; branch coverage >= 75%; mutation score >= 70% using Coverlet and Stryker.NET where executable projects exist.
+      - Candidate checks: dotnet format --verify-no-changes, dotnet test with Coverlet collection, and dotnet stryker. Actual solution/project paths and commands remain pending because executable project manifests and tests do not exist.
+      These are test-project technical decisions only. Feature-specific data fields, lifecycle behavior, authorization rules, and API contracts remain unapproved.
+    reason: User delegated T001/T002 test-project technical choices; native CQRS avoids an extra dependency and a modular monolith fits the single application test scope.
+    decided_at: '2026-10-09'

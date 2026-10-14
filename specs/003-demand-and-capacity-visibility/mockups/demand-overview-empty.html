@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>F-003 - Demand overview - View - Empty</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+  <body class="antialiased min-h-screen bg-zinc-50 text-zinc-900">
+    <header
+      class="border-b border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
+    >
+      <strong>Mockup - </strong
+      ><span
+        >Feature: <code>003-demand-and-capacity-visibility</code> - Flow:
+        <code>demand-overview</code> - Step: <code>view</code> - State:
+        <code>empty</code> - Optimised for: mobile / tablet / desktop. Empty
+        result; no count semantics assumed.</span
+      >
+    </header>
+    <main class="mx-auto max-w-6xl p-4 md:p-8">
+      <p class="text-sm text-zinc-500">Approver view</p>
+      <h1 class="mb-6 text-2xl font-semibold">Vacation demand</h1>
+      <section
+        class="mb-5 grid gap-4 border border-zinc-300 bg-white p-4 sm:grid-cols-2"
+      >
+        <div>
+          <label for="scope" class="mb-1 block text-sm font-medium"
+            >Organizational scope</label
+          ><select
+            id="scope"
+            disabled
+            class="w-full border border-zinc-400 bg-zinc-100 px-3 py-2"
+          >
+            <option>Scope options pending definition</option>
+          </select>
+        </div>
+        <div>
+          <label for="period" class="mb-1 block text-sm font-medium"
+            >Period</label
+          ><input
+            id="period"
+            disabled
+            class="w-full border border-zinc-400 bg-zinc-100 px-3 py-2"
+            placeholder="Period boundaries pending"
+          />
+        </div>
+      </section>
+      <section
+        class="border border-zinc-300 bg-white p-6"
+        aria-labelledby="empty-heading"
+      >
+        <h2 id="empty-heading" class="text-lg font-semibold">
+          No demand data to display
+        </h2>
+        <p class="mt-2 text-sm text-zinc-600">
+          The selected scope or period has no displayable records. Counting and
+          empty-result rules require approval.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

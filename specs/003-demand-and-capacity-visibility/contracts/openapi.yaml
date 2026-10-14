@@ -1,0 +1,121 @@
+openapi: 3.1.0
+info:
+  title: F-003 Demand and Capacity API (test profile)
+  version: 0.1.0
+  description: Read-only demand calculation over synthetic F-001 requests and F-005 snapshots. Thresholds are advisory.
+servers:
+  - url: /api
+security:
+  - bearerAuth: []
+paths:
+  /demand/summary:
+    get:
+      operationId: getDemandSummary
+      summary: Read demand for an authorized direct scope and inclusive period
+      parameters:
+        - in: query
+          name: scopeType
+          required: true
+          schema: { type: string, enum: [Department, Project] }
+        - in: query
+          name: scopeId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: fromDate
+          required: true
+          schema: { type: string, format: date }
+        - in: query
+          name: toDate
+          required: true
+          schema: { type: string, format: date }
+        - in: query
+          name: period
+          schema: { type: string, enum: [Day, Week], default: Week }
+      responses:
+        '200':
+          description: Demand summary with selected scope and snapshot freshness
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DemandSummary' }
+        '400': { description: Invalid date range or scope type }
+        '401': { description: Authentication required }
+        '403': { description: Actor lacks access to selected scope }
+        '404': { description: Scope does not exist in last valid snapshot }
+        '409': { description: No valid organization snapshot exists }
+  /capacity-limits:
+    get:
+      operationId: listCapacityLimits
+      summary: List advisory capacity limits for an authorized scope
+      parameters:
+        - in: query
+          name: scopeType
+          schema: { type: string, enum: [Department, Project] }
+        - in: query
+          name: scopeId
+          schema: { type: string }
+      responses:
+        '200':
+          description: Advisory limits visible to the authorized approver
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/CapacityLimit' }
+        '401': { description: Authentication required }
+        '403': { description: Actor lacks department approver role }
+    put:
+      operationId: setCapacityLimit
+      summary: Create or update an advisory capacity limit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CapacityLimitInput' }
+      responses:
+        '200':
+          description: Advisory limit stored; it does not block workflow actions
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CapacityLimit' }
+        '400': { description: Invalid period or non-positive limit }
+        '401': { description: Authentication required }
+        '403': { description: Actor lacks department approver role }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    DemandSummary:
+      type: object
+      required: [scopeType, scopeId, fromDate, toDate, activeMemberCount, peopleOnApprovedVacation, demandPercentage, thresholdExceeded, capacityExceeded, dataAsOf, stale]
+      properties:
+        scopeType: { type: string, enum: [Department, Project] }
+        scopeId: { type: string }
+        fromDate: { type: string, format: date }
+        toDate: { type: string, format: date }
+        activeMemberCount: { type: integer, minimum: 0 }
+        peopleOnApprovedVacation: { type: integer, minimum: 0 }
+        demandPercentage: { type: [number, 'null'], minimum: 0 }
+        thresholdExceeded: { type: boolean, description: Advisory true when percentage >= 70; never blocks workflow. }
+        capacityExceeded: { type: boolean, description: Advisory only. }
+        dataAsOf: { type: string, format: date-time }
+        stale: { type: boolean }
+    CapacityLimitInput:
+      type: object
+      additionalProperties: false
+      required: [scopeType, scopeId, periodStart, periodEnd, maxConcurrentPeople]
+      properties:
+        scopeType: { type: string, enum: [Department, Project] }
+        scopeId: { type: string }
+        periodStart: { type: string, format: date }
+        periodEnd: { type: string, format: date }
+        maxConcurrentPeople: { type: integer, minimum: 1 }
+    CapacityLimit:
+      allOf:
+        - $ref: '#/components/schemas/CapacityLimitInput'
+        - type: object
+          required: [id, updatedBy, updatedAt]
+          properties:
+            id: { type: string, format: uuid }
+            updatedBy: { type: string }
+            updatedAt: { type: string, format: date-time }

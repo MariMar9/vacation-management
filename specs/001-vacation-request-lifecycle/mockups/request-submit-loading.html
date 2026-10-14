@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>F-001 - Submit request - Loading</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+  <body class="antialiased min-h-screen bg-zinc-50 text-zinc-900">
+    <header
+      class="border-b border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
+    >
+      <strong>Mockup · </strong
+      ><span
+        >Feature: <code>F-001</code> · Flow: <code>request-submit</code> · Step:
+        <code>form</code> · State: <code>loading</code> · Optimised for: mobile
+        / tablet / desktop. Synthetic test data.</span
+      >
+    </header>
+    <main class="mx-auto max-w-5xl p-6" aria-busy="true">
+      <p class="mb-2 text-xs font-semibold uppercase text-zinc-500">
+        Vacation Management · Test workspace
+      </p>
+      <h1 class="mb-6 text-2xl font-semibold">Submitting request</h1>
+      <p
+        role="status"
+        class="max-w-xl border-l-2 border-zinc-500 bg-zinc-100 p-4"
+      >
+        Saving the request and checking date overlap…
+      </p>
+      <div class="mt-6 max-w-xl space-y-3" aria-hidden="true">
+        <div class="h-10 border border-zinc-300 bg-zinc-100"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="h-10 border border-zinc-300 bg-zinc-100"></div>
+          <div class="h-10 border border-zinc-300 bg-zinc-100"></div>
+        </div>
+      </div>
+      <button
+        type="button"
+        disabled
+        class="mt-6 border border-zinc-300 px-4 py-2 text-sm text-zinc-500"
+      >
+        Submitting…
+      </button>
+    </main>
+  </body>
+</html>

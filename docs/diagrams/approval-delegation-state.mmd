@@ -1,0 +1,16 @@
+stateDiagram-v2
+    [*] --> NoActiveDelegation: F-002 analysis boundary
+    NoActiveDelegation --> DelegationActive: Record valid delegation [authorized project approver]
+
+    state "No active delegation" as NoActiveDelegation
+    state "Delegation recorded and active within approved scope" as DelegationActive
+
+    note right of NoActiveDelegation
+        Boundary condition only;
+        formal initial state is unspecified.
+    end note
+
+    note right of DelegationActive
+        Same-project eligibility is required.
+        Scope and duration require policy.
+    end note

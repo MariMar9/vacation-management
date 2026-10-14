@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>F-002 - Department decision - Review - Default</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+  <body class="antialiased min-h-screen bg-zinc-50 text-zinc-900">
+    <header
+      class="border-b border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
+    >
+      <strong>Mockup - </strong
+      ><span
+        >Feature: <code>002-approval-and-delegation</code> - Flow:
+        <code>department-decision</code> - Step: <code>review</code> - State:
+        <code>default</code> - Optimised for: mobile / tablet / desktop. Assumes
+        authorized department approver and eligible request.</span
+      >
+    </header>
+    <main class="mx-auto max-w-5xl p-4 md:p-8">
+      <nav aria-label="Breadcrumb" class="mb-6 text-sm text-zinc-600">
+        Department decisions / Request review
+      </nav>
+      <p class="text-sm text-zinc-500">Department approver</p>
+      <h1 class="mb-6 text-2xl font-semibold">Review request</h1>
+      <section class="border border-zinc-300 bg-white p-5">
+        <h2 class="mb-4 text-lg font-semibold">Request details</h2>
+        <dl class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <dt class="text-xs font-semibold uppercase text-zinc-500">
+              Requester
+            </dt>
+            <dd class="mt-1">[requester]</dd>
+          </div>
+          <div>
+            <dt class="text-xs font-semibold uppercase text-zinc-500">
+              Requested period
+            </dt>
+            <dd class="mt-1">[requested period]</dd>
+          </div>
+          <div>
+            <dt class="text-xs font-semibold uppercase text-zinc-500">
+              Current eligibility
+            </dt>
+            <dd class="mt-1">Eligible for department decision</dd>
+          </div>
+        </dl>
+      </section>
+      <section class="mt-5 border border-zinc-300 bg-white p-5">
+        <h2 class="text-lg font-semibold">Department decision</h2>
+        <p class="mt-1 text-sm text-zinc-600">
+          Decision order and whether this level is required are unresolved.
+        </p>
+        <button
+          class="mt-5 border border-zinc-700 bg-zinc-800 px-4 py-2 text-white"
+        >
+          Approve
+        </button>
+        <p class="mt-4 text-xs text-zinc-500">
+          No department rejection action is specified.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

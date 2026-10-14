@@ -1,0 +1,80 @@
+openapi: 3.1.0
+info:
+  title: F-006 Test Identity and Access API
+  version: 0.1.0
+  description: Application access profile for synthetic test identities. Login/OIDC is provided by the host; this API never accepts credentials.
+servers:
+  - url: /api
+security:
+  - bearerAuth: []
+paths:
+  /session/access:
+    get:
+      operationId: getCurrentAccessProfile
+      summary: Return the authenticated synthetic principal's roles and direct scopes
+      responses:
+        '200':
+          description: Authorized access profile
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccessProfile' }
+        '401': { description: Missing or invalid identity }
+        '403': { description: Identity is inactive or not provisioned for the test scope }
+  /session/authorize:
+    post:
+      operationId: checkTestCapability
+      summary: Test-only authorization probe used by UI and integration checks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [capability, scopeType, scopeId]
+              properties:
+                capability: { type: string, enum: [CreateRequest, ReadOwnRequest, CancelOwnRequest, ReviewProject, DecideProject, DecideDepartment, DelegateProject, ReadDemand, ManageCapacity] }
+                scopeType: { type: string, enum: [Self, Project, Department] }
+                scopeId: { type: string }
+      responses:
+        '200':
+          description: Decision for the authenticated principal
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [allowed]
+                properties:
+                  allowed: { type: boolean }
+                  reason: { type: [string, 'null'] }
+        '401': { description: Missing or invalid identity }
+        '403': { description: The probe itself is outside the caller's scope }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    AccessProfile:
+      type: object
+      required: [subjectId, active, departmentId, roles, projectIds, membershipProjectIds, delegatableProjectIds]
+      properties:
+        subjectId: { type: string, pattern: '^EMP-TEST-[A-Z0-9-]+$' }
+        active: { type: boolean }
+        departmentId: { type: string, const: DEPT-TEST-001 }
+        roles:
+          type: array
+          uniqueItems: true
+          items: { type: string, enum: [Requester, ProjectApprover, DepartmentApprover] }
+        projectIds:
+          type: array
+          uniqueItems: true
+          items: { type: string, pattern: '^PRJ-TEST-[A-Z0-9-]+$' }
+          description: Project scopes available for review, demand, and other authorized access.
+        membershipProjectIds:
+          type: array
+          uniqueItems: true
+          items: { type: string, pattern: '^PRJ-TEST-[A-Z0-9-]+$' }
+          description: Direct memberships eligible for vacation request submission.
+        delegatableProjectIds:
+          type: array
+          uniqueItems: true
+          items: { type: string, pattern: '^PRJ-TEST-[A-Z0-9-]+$' }
+          description: Projects where the authenticated identity is the assigned ProjectApprover and can manage delegations.

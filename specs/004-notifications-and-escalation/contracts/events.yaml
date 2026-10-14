@@ -1,0 +1,43 @@
+version: 0.1.0
+status: test-project-simulator-only
+source: ../requirements/data-model.md
+transport: local-notification-simulator
+external-delivery: disabled
+idempotency:
+  key: eventKey
+  duplicateBehavior: return-existing-outbox-record
+events:
+  - name: RequestSubmitted
+    trigger: F-001 request enters PendingProjectApproval
+    recipients: [assigned-project-approver]
+  - name: ProjectApproved
+    trigger: project-level approval recorded
+    recipients: [assigned-department-approver]
+  - name: RequestFinallyApproved
+    trigger: both project and department approvals are Approved
+    recipients: [requester]
+  - name: RequestRejected
+    trigger: project-level rejection recorded
+    recipients: [requester]
+  - name: RequestCancelled
+    trigger: eligible requester cancellation before project decision
+    recipients: [requester, current-approver]
+  - name: RequestReminder
+    trigger: 3 calendar days elapsed in current pending approval level
+    recipients: [current-approver]
+    repeat: none
+    suppressWhenTerminal: true
+  - name: RequestEscalated
+    trigger: 5 calendar days elapsed in current pending approval level
+    recipients: [department-approver]
+    repeat: none
+    suppressWhenTerminal: true
+payload:
+  required: [eventId, eventType, requestId, recipientId, occurredAt, requestStatus, applicationLink]
+  forbidden: [reasonText, accessToken, credentials, unnecessaryPersonalData]
+retry:
+  maximumAttempts: 3
+  afterLimit: mark-Failed-and-expose-to-test-inspection
+retention:
+  syntheticOutboxDays: 90
+  classification: test-data-only-not-a-legal-retention-policy

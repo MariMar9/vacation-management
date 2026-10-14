@@ -1,0 +1,29 @@
+scope: cloud-platform
+status: completed
+total_articles: 1
+approval:
+  approved_by: MariMar9
+  identity_context: Git/session display identity only; not verified legal identity
+  decided_at: '2026-10-09'
+  evidence: User-authorized test-project approval in this Copilot conversation; not a cryptographic signature
+articles:
+  - number: CP-08-10-11-12-13-16-19
+    title: Test environment, delivery, security, and quality controls
+    criticality: HIGH
+    status: refined
+    decision: modified
+    content: Existing cloud constitution and wizard values are unratified candidates, including Azure, Terraform, GitHub Actions, OTel-to-Azure, and conflicting production/mutation settings.
+    modified_content: |
+      Cloud and delivery decisions for the Vacation Management test project:
+      - Cloud provider and runtime target: Microsoft Azure test environment using Azure Container Apps and Azure SQL. These are target decisions, not evidence that resources exist or authorization to deploy production.
+      - Infrastructure as code and local orchestration: Terraform and Podman. Work-management tracking remains GitHub Projects.
+      - CI/CD: GitHub Actions with Terraform. Deploy to dev on merge. UAT and Prod stages require manual environment approval; neither is auto-deployed. UAT/Prod are reserved stages only and are not authorized for real deployment.
+      - Deployment strategy: rolling.
+      - Branch policy: GitHub Flow with a feature parent named feature/<feature-name>; Bolt branches are distinct refs named bolt/<feature-name>-bolt-<N>-<slug>. Do not create feature/<feature-name>/bolt-<N>, because Git cannot hold that parent ref and child ref simultaneously.
+      - Observability direction: OpenTelemetry to Azure Monitor for the test environment.
+      - Identity: Microsoft Entra ID OIDC for users; managed identity for application-to-Azure access; GitHub Actions OIDC federation for CI. Use Azure Key Vault for hosted secrets and .NET User Secrets locally. Never put credentials in source.
+      - Security target: synthetic data only; TLS in transit; Azure-managed encryption keys at rest; least privilege; VNet and private endpoints as test-environment targets; WAF disabled for this test environment.
+      - Compliance: not determined and not applicable to this synthetic-data-only test scope. Do not claim GDPR/HIPAA applicability, certification, or regulatory compliance.
+      - Quality: lint errors 0, tests 100% passing, line coverage >= 80%, branch coverage >= 75%, mutation >= 70%; frontend additionally requires >= 1 executable Playwright smoke test. Use dotnet format/test/Coverlet/Stryker.NET and Angular lint/test/Playwright where projects exist. No runtime quality gate is evidenced as executed while manifests and tests are absent.
+    reason: User resolved wizard conflicts for this test scope and required manual UAT/Prod approvals, 70% mutation, non-conflicting branches, synthetic data, and no unsupported compliance claims.
+    decided_at: '2026-10-09'

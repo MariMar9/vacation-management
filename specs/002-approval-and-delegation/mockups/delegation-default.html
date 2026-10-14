@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>F-002 - Delegation - Grant - Default</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+  <body class="antialiased min-h-screen bg-zinc-50 text-zinc-900">
+    <header
+      class="border-b border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
+    >
+      <strong>Mockup - </strong
+      ><span
+        >Feature: <code>002-approval-and-delegation</code> - Flow:
+        <code>delegation</code> - Step: <code>grant</code> - State:
+        <code>default</code> - Optimised for: mobile / tablet / desktop. Assumes
+        policy is approved; grant remains disabled pending scope/validity
+        definitions.</span
+      >
+    </header>
+    <main class="mx-auto max-w-3xl p-4 md:p-8">
+      <nav aria-label="Breadcrumb" class="mb-6 text-sm text-zinc-600">
+        Project requests / Delegation
+      </nav>
+      <p class="text-sm text-zinc-500">Project approver</p>
+      <h1 class="mb-6 text-2xl font-semibold">
+        Delegate approval responsibility
+      </h1>
+      <form class="space-y-5 border border-zinc-300 bg-white p-5">
+        <div>
+          <label for="delegate" class="mb-1 block text-sm font-medium"
+            >Proposed delegate</label
+          ><input
+            id="delegate"
+            class="w-full border border-zinc-400 bg-zinc-50 px-3 py-2"
+            placeholder="Eligible person in the same project"
+          />
+          <p class="mt-1 text-xs text-zinc-500">
+            Project membership must be verified before a grant.
+          </p>
+        </div>
+        <fieldset class="border border-dashed border-zinc-400 p-4">
+          <legend class="px-1 text-sm font-medium">
+            Delegation scope and validity
+          </legend>
+          <p class="text-sm text-zinc-600">
+            Fields and rules pending stakeholder definition. No duration or
+            authority is assumed.
+          </p>
+        </fieldset>
+        <button
+          class="border border-zinc-300 bg-zinc-100 px-4 py-2 text-zinc-500"
+          disabled
+        >
+          Record delegation - policy pending
+        </button>
+      </form>
+    </main>
+  </body>
+</html>

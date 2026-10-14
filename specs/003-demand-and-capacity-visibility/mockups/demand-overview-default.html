@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>F-003 - Demand overview - View - Default</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+  <body class="antialiased min-h-screen bg-zinc-50 text-zinc-900">
+    <header
+      class="border-b border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
+    >
+      <strong>Mockup - </strong
+      ><span
+        >Feature: <code>003-demand-and-capacity-visibility</code> - Flow:
+        <code>demand-overview</code> - Step: <code>view</code> - State:
+        <code>default</code> - Optimised for: mobile / tablet / desktop.
+        Placeholder values; scope and period controls disabled pending
+        decisions.</span
+      >
+    </header>
+    <div class="mx-auto flex min-h-screen max-w-7xl flex-col md:flex-row">
+      <nav
+        aria-label="Approver navigation"
+        class="border-b border-zinc-300 bg-white p-4 md:w-56 md:border-b-0 md:border-r"
+      >
+        <p class="mb-3 text-xs font-semibold uppercase text-zinc-500">
+          Vacation management
+        </p>
+        <a class="block border border-zinc-300 px-3 py-2 text-sm" href="#"
+          >Requests</a
+        ><a
+          aria-current="page"
+          class="mt-2 block border border-zinc-400 bg-zinc-100 px-3 py-2 text-sm"
+          href="#"
+          >Demand overview</a
+        >
+      </nav>
+      <main class="min-w-0 flex-1 p-4 md:p-8">
+        <p class="text-sm text-zinc-500">Approver view</p>
+        <h1 class="mb-6 text-2xl font-semibold">Vacation demand</h1>
+        <form
+          class="mb-6 grid gap-4 border border-zinc-300 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4"
+        >
+          <div>
+            <label for="scope" class="mb-1 block text-sm font-medium"
+              >Organizational scope</label
+            ><select
+              id="scope"
+              disabled
+              class="w-full border border-zinc-400 bg-zinc-100 px-3 py-2"
+            >
+              <option>Scope options pending definition</option>
+            </select>
+          </div>
+          <div>
+            <label for="period" class="mb-1 block text-sm font-medium"
+              >Period</label
+            ><input
+              id="period"
+              disabled
+              class="w-full border border-zinc-400 bg-zinc-100 px-3 py-2"
+              placeholder="Date boundaries pending"
+            />
+          </div>
+          <div>
+            <label for="granularity" class="mb-1 block text-sm font-medium"
+              >Period unit</label
+            ><select
+              id="granularity"
+              disabled
+              class="w-full border border-zinc-400 bg-zinc-100 px-3 py-2"
+            >
+              <option>Days or weeks - pending decision</option>
+            </select>
+          </div>
+          <div class="flex items-end">
+            <button
+              disabled
+              class="w-full border border-zinc-300 bg-zinc-100 px-3 py-2 text-zinc-500"
+            >
+              View demand - pending rules
+            </button>
+          </div>
+        </form>
+        <section aria-labelledby="summary-heading">
+          <h2 id="summary-heading" class="mb-3 text-lg font-semibold">
+            Summary
+          </h2>
+          <div class="grid gap-3 sm:grid-cols-2">
+            <article class="border border-zinc-300 bg-white p-4">
+              <h3 class="text-sm font-medium text-zinc-600">
+                People on vacation
+              </h3>
+              <p class="mt-2 text-2xl font-semibold">
+                [count definition pending]
+              </p>
+            </article>
+            <article class="border border-zinc-300 bg-white p-4">
+              <h3 class="text-sm font-medium text-zinc-600">
+                Requests in period
+              </h3>
+              <p class="mt-2 text-2xl font-semibold">
+                [count definition pending]
+              </p>
+            </article>
+          </div>
+        </section>
+        <section class="mt-6 border border-zinc-300 bg-white p-4">
+          <h2 class="text-lg font-semibold">Demand by period</h2>
+          <div
+            class="mt-3 flex min-h-40 items-center justify-center border border-dashed border-zinc-400 bg-zinc-100 p-4 text-center text-sm text-zinc-600"
+          >
+            [chart] Visualization pending approved numerator, denominator,
+            request states, and threshold.
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

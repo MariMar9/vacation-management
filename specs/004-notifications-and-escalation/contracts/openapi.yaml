@@ -1,0 +1,58 @@
+openapi: 3.1.0
+info:
+  title: F-004 Notification Simulator API
+  version: 0.1.0
+  description: Local test outbox inspection API. No email or Teams delivery is performed.
+servers:
+  - url: /test-simulator
+security:
+  - bearerAuth: []
+paths:
+  /notifications:
+    get:
+      operationId: listSyntheticNotifications
+      summary: List local simulator notifications visible to the test actor
+      parameters:
+        - in: query
+          name: requestId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: recipientId
+          schema: { type: string }
+      responses:
+        '200':
+          description: Notifications visible to the authorized test actor
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Notification' }
+        '401': { description: Authentication required }
+        '403': { description: Actor lacks scope to inspect this notification }
+  /notifications/evaluate-escalations:
+    post:
+      operationId: evaluateSyntheticEscalations
+      summary: Test-clock hook for deterministic reminder/escalation tests
+      description: Production scheduling is not implemented by this test-only endpoint.
+      responses:
+        '202': { description: Eligible reminder/escalation events evaluated and queued in local outbox }
+        '401': { description: Authentication required }
+        '403': { description: Test operator role required }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    Notification:
+      type: object
+      required: [id, eventKey, requestId, eventType, recipientId, occurredAt, payload, deliveryStatus, attemptCount, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        eventKey: { type: string }
+        requestId: { type: string, format: uuid }
+        eventType: { type: string, enum: [RequestSubmitted, ProjectApproved, RequestFinallyApproved, RequestRejected, RequestCancelled, RequestReminder, RequestEscalated] }
+        recipientId: { type: string }
+        occurredAt: { type: string, format: date-time }
+        payload: { type: object, additionalProperties: false }
+        deliveryStatus: { type: string, enum: [Pending, Delivered, Failed] }
+        attemptCount: { type: integer, minimum: 0, maximum: 3 }
+        createdAt: { type: string, format: date-time }

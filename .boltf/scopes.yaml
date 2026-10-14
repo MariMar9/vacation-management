@@ -1,6 +1,6 @@
 # =============================================================================
 # Bolt Framework — Active Scopes Configuration
-# Generated: 2026-10-07 13:33:49
+# Generated: 2026-10-09
 # =============================================================================
 # This file declares which scopes are active and records all wizard decisions.
 # Each scope injects its own constitution sections from
@@ -14,6 +14,7 @@ project:
   migration-type: green   # green | brown
   backend-stack-template: dotnet-8 # dotnet-8 | go | nodejs-nestjs | python-fastapi | custom | none
   work-management-tool: github-projects    # Work item tracking integration (Step 1.5)
+  cloud-provider: azure-test-only
 
   # Development Environment (Step 1.6)
   local-orchestration: podman     # docker-compose | kubernetes | podman | aspire | none
@@ -25,6 +26,7 @@ active-scopes:
   - backend
   - frontend
   - cloud-platform
+  - integration
 
 # Transversal (always active, not selectable)
 transversal-scopes:
@@ -40,8 +42,8 @@ decisions:
     enabled: [dev, uat, prod]
     auto-deploy:
       dev: true
-      uat: true
-      prod: true
+      uat: false
+      prod: false
   config-management: config-files
   secrets-dev: user-secrets
   feature-flags: none
@@ -58,7 +60,10 @@ decisions:
       deployment: [deploy-dev, deploy-uat, deploy-prod]
     thresholds:
       unit-test-coverage: 80
-      mutation-score: 60
+      branch-coverage: 75
+      mutation-score: 70
+      tests-pass-rate: 100
+      lint-errors: 0
 
   # Article XII — Observability
   observability: otel-azure
@@ -70,8 +75,8 @@ decisions:
     private-endpoints: true
     waf: false
     encryption-keys: azure-managed
-    pii-handling: encryption
-    compliance: [gdpr, hipaa]
+    pii-handling: synthetic-data-only
+    compliance: [not-determined-test-only]
 
   # Frontend scope decisions
   frontend:

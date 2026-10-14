@@ -1,22 +1,93 @@
-# BOLT Framework Project Constitution
+# Vacation Management Test Project Constitution
 
-> **Version**: 1.0.0
-> **Ratification Date**: [YYYY-MM-DD]
-> **Last Amended**: [YYYY-MM-DD]
-> **Status**: Template
-
----
+**Version:** 1.0.0  
+**Status:** Approved for this test project only  
+**Effective date:** 2026-10-09  
+**Evidence:** User-authorized Copilot conversation; not a cryptographic signature  
+**Active scopes:** backend, frontend, cloud-platform, integration
 
 ## Preamble
 
-This Constitution establishes the governing principles, technology decisions, and standards for the **[PROJECT_NAME]** project. All AI agents, developers, and automated systems MUST adhere to this document.
+This constitution records decisions authorized for this test workspace only. The decision owner is `MariMar9`, the session/Git display identity; it is not a verified legal identity. This is not formal external sponsor, business, legal, regulatory, security, or production sign-off.
 
-**This document is the SINGLE SOURCE OF TRUTH.**
+The RFP and Requirements Baseline are accepted only as test/discovery references. Unresolved feature policies remain conditional. This constitution does not approve F-001–F-006 requirements, business rules, API contracts, Gherkin, feature readiness, or implementation readiness.
 
-**Cloud Provider**: Microsoft Azure (mandatory for all deployments)
+## Article I: Scope and Authority
 
----
+- Active scopes: `backend`, `frontend`, `cloud-platform`, and `integration`.
+- The `data` scope is not active because this is a transactional application, not an analytics platform.
+- GitHub Projects remains the work-management tool.
+- For this test workspace only, the user assigns `MariMar9` as Sponsor, Product Owner, Workflow Owner, Data/Integration Owner, Security/Privacy Authority, Architecture/Platform Authority, Release Authority, and Service Owner.
+- No external real-system owners are appointed; external systems and APIs remain simulated pending approved F-005 contracts.
 
+## Article II: Application Stack and Architecture
+
+### Backend
+
+- C# and ASP.NET Core Web API on .NET 8, using Controllers (MVC), REST, and OpenAPI.
+- Use a modular monolith and Azure SQL with Entity Framework Core.
+- Use simple CQRS with native interfaces; do not add MediatR. Do not use event sourcing.
+- No message broker for the initial test scope. Scheduled integration workers may be considered only after their contracts are approved.
+
+### Frontend
+
+- Use Angular 20 as a single-page application. No mobile application is in this test scope.
+
+### Identity Direction
+
+- Use Microsoft Entra ID with OIDC for user authentication; managed identity for application-to-Azure access; and OIDC federation for GitHub Actions.
+- This identity direction does not decide F-006 population, roles, permissions, authorization rules, or feature access behavior.
+
+## Article III: Integration Boundaries
+
+- Use synchronous REST with OpenAPI for application contracts.
+- Simulate external APIs, including ServiceNow and Active Directory, until F-005 contracts are separately approved.
+- Consider scheduled integration workers only after approved contracts define data, identity, cadence, error handling, and ownership.
+- T001/T002 do not approve feature payloads, business rules, events, schedules, or integration contracts.
+
+## Article IV: Cloud and Delivery
+
+- Azure is the target provider for a test environment only. No resource deployment is implied or authorized.
+- Target hosting is Azure Container Apps with Azure SQL. Use Terraform for infrastructure as code and Podman for local orchestration.
+- Use GitHub Actions for CI/CD and OpenTelemetry to Azure Monitor for test-environment observability.
+- Use rolling deployment. Deploy to `dev` on merge. UAT and Prod stages require manual environment approval and are not auto-deployed; they are reserved stages, not authorization for real deployment.
+
+### Branch Naming
+
+- Feature parent: `feature/<feature-name>`.
+- Bolt branch: `bolt/<feature-name>-bolt-<N>-<slug>`.
+- Do not use `feature/<feature-name>/bolt-<N>` below a parent named `feature/<feature-name>`; Git cannot represent both refs simultaneously.
+
+## Article V: Configuration and Secrets
+
+- Use Azure Key Vault for hosted secrets and .NET User Secrets locally.
+- Never commit credentials or secrets. Use environment-specific non-secret configuration.
+
+## Article VI: Quality Gates
+
+Where the corresponding executable projects exist, require lint/format errors `0`, test pass rate `100%`, line coverage at least `80%`, branch coverage at least `75%`, and mutation score at least `70%` using Stryker.NET where applicable. Frontend work additionally requires at least one passing executable Playwright smoke test.
+
+Use `dotnet format --verify-no-changes`, `dotnet test` with Coverlet, and Stryker.NET for .NET; use Angular lint/test and `npx playwright test --grep @smoke` for the frontend. Actual project paths and runnable commands remain unverified until manifests and tests exist. A missing executable gate is pending, not passed.
+
+## Article VII: Security and Data Handling
+
+- Synthetic data only; do not use real personal, confidential, or regulated data.
+- Require TLS in transit and Azure-managed encryption keys at rest for the test target. Apply least privilege and managed identities.
+- VNet and private endpoints are target controls for a potential Azure test environment; WAF is off for this test environment.
+- Compliance applicability is not determined and is not applicable to this synthetic-data-only test scope. Do not claim GDPR/HIPAA applicability, certification, or regulatory compliance.
+- These test controls are not production security approval or evidence of deployed controls.
+
+## Article VIII: Feature Readiness Boundary
+
+T001 and T002 completion clears only global governance and technical prerequisites for this test project. All F-001–F-006 feature Bolts remain blocked until applicable feature rules, requirements, contracts, Gherkin, external ownership, and readiness evidence are separately completed. No feature business policy is inferred from this constitution or draft baseline content.
+
+## Governance and Evidence
+
+The approval record is [test-project-approval.md](test-project-approval.md). The structured decision source is [merged-refinement.yaml](refinement-states/merged-refinement.yaml), with per-scope refinements stored alongside it. The architecture decision is [ADR-002](../../docs/docs/adr/ADR-002-test-project-architecture-and-controls.md).
+
+Any future real project, regulated-data use, or production deployment requires new, explicitly scoped authority and approval evidence.
+
+<!-- Legacy unchecked template retained below for reference only. It is non-operative; the approved decisions above govern this test project.
 ## Article I: Project Scope & Type
 
 > **⚠️ IMPORTANT**: Define the active scopes FIRST. This determines which articles and scope constitutions apply. The project type (Infrastructure / Application / Full Stack) is automatically derived from the selected scopes.
@@ -295,3 +366,4 @@ Before generating code or making changes:
 | 2.1.0   | [DATE] | [AUTHOR] | Added Project Scope (App/Infra/Full Stack), Landing Zone templates, Infrastructure testing |
 | 2.0.0   | [DATE] | [AUTHOR] | Complete rewrite with C#/Node.js options                                                   |
 | 1.0.0   | [DATE] | [AUTHOR] | Initial constitution                                                                       |
+-->

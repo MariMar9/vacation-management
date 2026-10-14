@@ -1,0 +1,16 @@
+C:\code\vacation-management\src\backend\VacationManagement.Application\bin\Debug\net8.0\VacationManagement.Application.deps.json
+C:\code\vacation-management\src\backend\VacationManagement.Application\bin\Debug\net8.0\VacationManagement.Application.dll
+C:\code\vacation-management\src\backend\VacationManagement.Application\bin\Debug\net8.0\VacationManagement.Application.pdb
+C:\code\vacation-management\src\backend\VacationManagement.Application\bin\Debug\net8.0\VacationManagement.Domain.dll
+C:\code\vacation-management\src\backend\VacationManagement.Application\bin\Debug\net8.0\VacationManagement.Domain.pdb
+C:\code\vacation-management\src\backend\VacationManagement.Application\obj\Debug\net8.0\VacationManagement.Application.csproj.AssemblyReference.cache
+C:\code\vacation-management\src\backend\VacationManagement.Application\obj\Debug\net8.0\VacationManagement.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\code\vacation-management\src\backend\VacationManagement.Application\obj\Debug\net8.0\VacationManagement.Application.AssemblyInfoInputs.cache
+C:\code\vacation-management\src\backend\VacationManagement.Application\obj\Debug\net8.0\VacationManagement.Application.AssemblyInfo.cs
+C:\code\vacation-management\src\backend\VacationManagement.Application\obj\Debug\net8.0\VacationManagement.Application.csproj.CoreCompileInputs.cache
+C:\code\vacation-management\src\backend\VacationManagement.Application\obj\Debug\net8.0\VacationManagement.Application.sourcelink.json
+C:\code\vacation-management\src\backend\VacationManagement.Application\obj\Debug\net8.0\Vacation.E1101C83.Up2Date
+C:\code\vacation-management\src\backend\VacationManagement.Application\obj\Debug\net8.0\VacationManagement.Application.dll
+C:\code\vacation-management\src\backend\VacationManagement.Application\obj\Debug\net8.0\refint\VacationManagement.Application.dll
+C:\code\vacation-management\src\backend\VacationManagement.Application\obj\Debug\net8.0\VacationManagement.Application.pdb
+C:\code\vacation-management\src\backend\VacationManagement.Application\obj\Debug\net8.0\ref\VacationManagement.Application.dll

@@ -1,0 +1,137 @@
+openapi: 3.1.0
+info:
+  title: F-001 Vacation Request API (test profile)
+  version: 0.1.0
+  description: Contract derived from the synthetic test-profile decision register and F-001 data model. No production policy is implied.
+servers:
+  - url: /api
+security:
+  - bearerAuth: []
+paths:
+  /requests:
+    post:
+      operationId: submitVacationRequest
+      summary: Submit a vacation request for the authenticated requester
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitRequest'
+      responses:
+        '201':
+          description: Request created in PendingProjectApproval
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VacationRequest'
+        '400': { description: Invalid date range or payload }
+        '401': { description: Authentication required }
+        '403': { description: Requester is not eligible for the project }
+        '409': { description: Overlapping active request or stale organization snapshot }
+    get:
+      operationId: listMyVacationRequests
+      summary: List requests owned by the authenticated requester
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [PendingProjectApproval, PendingDepartmentApproval, Approved, Rejected, Cancelled]
+      responses:
+        '200':
+          description: Requests belonging to the authenticated requester
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/VacationRequest' }
+        '401': { description: Authentication required }
+  /requests/{requestId}:
+    get:
+      operationId: getMyVacationRequest
+      summary: Read one request owned by the authenticated requester
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+      responses:
+        '200':
+          description: Request found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VacationRequest' }
+        '401': { description: Authentication required }
+        '404': { description: Request not found in requester scope }
+  /requests/{requestId}/cancel:
+    post:
+      operationId: cancelMyVacationRequest
+      summary: Cancel own request before a project decision
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+      responses:
+        '200':
+          description: Request is Cancelled
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VacationRequest' }
+        '401': { description: Authentication required }
+        '404': { description: Request not found in requester scope }
+        '409': { description: Request is not eligible for cancellation }
+  /requests/mine/history:
+    get:
+      operationId: getMyVacationHistory
+      summary: Read all retained own requests with derived taken label
+      responses:
+        '200':
+          description: Request history
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/HistoryItem' }
+        '401': { description: Authentication required }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    RequestId:
+      in: path
+      name: requestId
+      required: true
+      schema: { type: string, format: uuid }
+  schemas:
+    SubmitRequest:
+      type: object
+      additionalProperties: false
+      required: [projectId, startDate, endDate]
+      properties:
+        projectId: { type: string, pattern: '^PRJ-TEST-[A-Z0-9-]+$' }
+        startDate: { type: string, format: date, description: Inclusive Europe/Madrid calendar date; today or later. }
+        endDate: { type: string, format: date, description: Inclusive and on/after startDate. }
+        reason: { type: [string, 'null'], maxLength: 500 }
+    VacationRequest:
+      type: object
+      required: [id, requesterId, departmentId, projectId, startDate, endDate, status, createdAt, updatedAt, version]
+      properties:
+        id: { type: string, format: uuid }
+        requesterId: { type: string, pattern: '^EMP-TEST-[A-Z0-9-]+$' }
+        departmentId: { type: string, const: DEPT-TEST-001 }
+        projectId: { type: string }
+        startDate: { type: string, format: date }
+        endDate: { type: string, format: date }
+        reason: { type: [string, 'null'], maxLength: 500 }
+        status:
+          type: string
+          enum: [PendingProjectApproval, PendingDepartmentApproval, Approved, Rejected, Cancelled]
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        version: { type: integer, minimum: 1 }
+    HistoryItem:
+      allOf:
+        - $ref: '#/components/schemas/VacationRequest'
+        - type: object
+          required: [taken]
+          properties:
+            taken: { type: boolean, description: Derived as Approved and endDate before today's Europe/Madrid date. }
